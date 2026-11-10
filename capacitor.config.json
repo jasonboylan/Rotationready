@@ -1,0 +1,10 @@
+{
+  "appId": "com.jasonboylan.rotationready",
+  "appName": "Rotation Ready",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#15464d",
+    "scrollEnabled": true
+  }
+}

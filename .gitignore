@@ -1,0 +1,11 @@
+node_modules/
+ios/App/Pods/
+ios/App/App/public/
+ios/App/build/
+ios/DerivedData/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+build/
+*.ipa
+*.p8

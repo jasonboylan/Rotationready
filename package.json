@@ -1,0 +1,18 @@
+{
+  "name": "rotation-ready",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rotation Ready: volleyball rotations and lineups for iPhone and iPad",
+  "scripts": {
+    "sync": "cap sync ios",
+    "open": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.3",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}
