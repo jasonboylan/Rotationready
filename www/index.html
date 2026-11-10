@@ -694,5 +694,5 @@ buildStatic();renderPanel();fillTeamForm();applyTeam();applyZoom();render();
 })();
 </script>
 
-<script>if(!window.Capacitor&&"serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
+<script>if("serviceWorker" in navigator&&!window.Capacitor&&location.protocol==="https:"){const had=!!navigator.serviceWorker.controller;addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!window.__rl){window.__rl=1;location.reload();}});}</script>
 </body></html>
