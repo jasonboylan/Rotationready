@@ -95,18 +95,21 @@ h1{font-family:var(--display);font-weight:700;font-size:1.6rem;letter-spacing:.0
 
 .board{display:grid;gap:10px;min-width:0;justify-items:center}
 .courtscroll{width:100%;overflow:auto;-webkit-overflow-scrolling:touch}
-.courtwrap{--z:1;width:calc(var(--z) * min(100%,(100dvh - 120px) * .87));margin-inline:auto}
-@media (min-width:760px){.courtwrap{width:calc(var(--z) * min(100%,(100dvh - 230px) * .87))}}
+.courtwrap{--z:1;width:calc(var(--z) * min(100%,(100dvh - 120px) * .95));margin-inline:auto}
+@media (min-width:760px){.courtwrap{width:calc(var(--z) * min(100%,(100dvh - 230px) * .95))}}
 .zoombar{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .zoombar button{border:1px solid var(--line);background:var(--surface);border-radius:8px;min-width:40px;min-height:36px;font-weight:700;font-size:1rem}
-.court{position:relative;width:100%;aspect-ratio:9/10.35;touch-action:manipulation;user-select:none;-webkit-user-select:none;border-radius:6px;overflow:hidden}
+.court{position:relative;width:100%;aspect-ratio:9/9.45;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.court svg:first-child{border-radius:6px}
+.courtwrap.serving{padding-bottom:16%}
 .court svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .c-free{fill:var(--free)} .c-court{fill:var(--court)} .c-sheen{display:none}
 .court.wood{--court-line:var(--wood-line,#20323a);--arrow:rgba(25,30,32,.72)}
 .court.wood .c-court{fill:url(#woodCourt)} .court.wood .c-free{fill:url(#woodCourt)} .court.wood .c-sheen{display:inline}
 .court.wood .c-zone{opacity:.14}
 .court.wood .c-txt{fill:var(--court-line);opacity:.9}
-.court.wood .nm{color:#1d1a16;text-shadow:0 1px 0 rgba(255,255,255,.55)} .c-line{stroke:var(--court-line);fill:none}
+.court.wood .nm{color:#1d1a16;text-shadow:0 1px 0 rgba(255,255,255,.55)}
+.tok.off .nm,.court.wood .tok.off .nm{color:var(--ink);text-shadow:none} .c-line{stroke:var(--court-line);fill:none}
 .c-net{fill:var(--net)} .c-zone{fill:var(--court-line);opacity:.18;font-family:var(--display);font-weight:700}
 .c-txt{fill:var(--court-line);opacity:.8;font-family:var(--body);font-weight:600}
 .arrows line{stroke:var(--arrow);stroke-width:.06;stroke-dasharray:.16 .12;stroke-linecap:round}
@@ -200,23 +203,21 @@ h1{font-family:var(--display);font-weight:700;font-size:1.6rem;letter-spacing:.0
   <section class="board">
     <div class="courtscroll" id="courtScroll"><div class="courtwrap" id="courtWrap">
       <div class="court" id="court">
-        <svg viewBox="0 -0.45 9 10.35" preserveAspectRatio="none" aria-hidden="true">
+        <svg viewBox="0 -0.45 9 9.45" preserveAspectRatio="none" aria-hidden="true">
           <defs id="woodDefs">
             <linearGradient id="woodSheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".10"/></linearGradient>
           </defs>
-          <rect class="c-free" x="0" y="-0.45" width="9" height="10.35"/>
+          <rect class="c-free" x="0" y="-0.45" width="9" height="9.45"/>
           <rect class="c-court" x="0.06" y="0" width="8.88" height="8.94"/>
-          <rect class="c-sheen" x="0" y="-0.45" width="9" height="10.35" fill="url(#woodSheen)"/>
+          <rect class="c-sheen" x="0" y="-0.45" width="9" height="9.45" fill="url(#woodSheen)"/>
           <rect class="c-line" x="0.06" y="0" width="8.88" height="8.94" stroke-width="0.08"/>
           <line class="c-line" x1="0.06" y1="3" x2="8.94" y2="3" stroke-width="0.07"/>
-          <line class="c-line" x1="0.06" y1="9.12" x2="0.06" y2="9.45" stroke-width="0.06"/>
-          <line class="c-line" x1="8.94" y1="9.12" x2="8.94" y2="9.45" stroke-width="0.06"/>
           <rect class="c-net" x="0" y="-0.44" width="9" height="0.42"/>
           <text class="c-txt" x="0.2" y="2.88" font-size="0.26">3 m</text>
           <text class="c-txt" x="4.5" y="-0.11" font-size="0.34" text-anchor="middle" letter-spacing="0.06" style="fill:#fff;opacity:1;font-weight:800">NET</text>
           <g id="zoneNums"></g>
         </svg>
-        <svg class="arrows" id="arrows" viewBox="0 -0.45 9 10.35" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="arrows" id="arrows" viewBox="0 -0.45 9 9.45" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs>
           <g id="arrowG"></g>
         </svg>
@@ -355,7 +356,7 @@ function basePos(step,c){
   const pos={};
   if(step===1){c.ps.forEach(p=>pos[p.id]=[...ZXY[p.zone]]);return pos;}
   if(S.mode==='serve'&&step===2){
-    c.ps.forEach(p=>{const[x]=ZXY[p.zone];pos[p.id]=p===c.server?[7.7,9.45]:isFront(p.zone)?[x,1.7]:[x,6.2];});return pos;}
+    c.ps.forEach(p=>{const[x]=ZXY[p.zone];pos[p.id]=p===c.server?[7.7,9.5]:isFront(p.zone)?[x,1.7]:[x,6.2];});return pos;}
   if(S.mode==='receive'&&step===2){
     if(S.sys==='6-6'){const W={4:[1.7,3.9],3:[5.2,.9],2:[7.3,3.9],5:[2.3,6.9],6:[4.5,4.7],1:[6.7,6.9]};
       c.ps.forEach(p=>pos[p.id]=[...W[p.zone]]);return repair(pos,c);}
@@ -417,18 +418,19 @@ function render(){
     let t=toks[p.id];
     if(!t){t=document.createElement('div');t.dataset.id=p.id;t.innerHTML='<div class="disc"><span class="lab"></span><span class="zn"></span><span class="rl"></span></div><div class="nm"></div>';
       court.appendChild(t);toks[p.id]=t;bindDrag(t);
-      const start=pos[p.id];t.style.left=start[0]/9*100+'%';t.style.top=(start[1]+.45)/10.35*100+'%';}
+      const start=pos[p.id];t.style.left=start[0]/9*100+'%';t.style.top=(start[1]+.45)/9.45*100+'%';}
     t.className='tok '+p.role+(p.sets?' sets':'')+(p.num?' hasnum':'');
     t.querySelector('.lab').textContent=p.num||p.label;t.querySelector('.rl').textContent=p.num?p.label:'';t.querySelector('.zn').textContent=p.zone;t.querySelector('.nm').textContent=p.name;
     t.setAttribute('aria-label',`${p.num?'#'+p.num+' ':''}${p.name}, ${FULL[p.role]}, zone ${p.zone}`);
-    place(t,pos[p.id]);
+    place(t,pos[p.id]);t.classList.toggle('off',pos[p.id][1]>9);
   });
   const ball=document.getElementById('ball');
-  if(c.server&&S.step===2){ball.hidden=false;const sp=pos[c.server.id];ball.style.left=(sp[0]+.42)/9*100+'%';ball.style.top=(sp[1]-.35+.45)/10.35*100+'%';}else ball.hidden=true;
+  document.getElementById('courtWrap').classList.toggle('serving',!!(c.server&&S.step===2));
+  if(c.server&&S.step===2){ball.hidden=false;const sp=pos[c.server.id];ball.style.left=(sp[0]+.42)/9*100+'%';ball.style.top=(sp[1]-.35+.45)/9.45*100+'%';}else ball.hidden=true;
   prevPos=S.step>1?getPos(S.step-1,c):null;
   drawArrows(c,pos);renderInfo(c,pos);
 }
-function place(t,[x,y]){t.style.left=x/9*100+'%';t.style.top=(y+.45)/10.35*100+'%';}
+function place(t,[x,y]){t.style.left=x/9*100+'%';t.style.top=(y+.45)/9.45*100+'%';}
 
 function drawArrows(c,pos){
   const g=document.getElementById('arrowG');
@@ -566,7 +568,7 @@ function bindDrag(t){
   t.addEventListener('pointerdown',e=>{stopPlay();e.preventDefault();try{t.setPointerCapture(e.pointerId);}catch(_){}
     drag={id:t.dataset.id,t};t.classList.add('drag');});
   t.addEventListener('pointermove',e=>{if(!drag||drag.t!==t)return;const r=court.getBoundingClientRect();
-    const x=Math.min(9,Math.max(0,(e.clientX-r.left)/r.width*9)),y=Math.min(9.75,Math.max(-.3,(e.clientY-r.top)/r.height*10.35-.45));
+    const x=Math.min(9,Math.max(0,(e.clientX-r.left)/r.width*9)),y=Math.min(9.75,Math.max(-.3,(e.clientY-r.top)/r.height*9.45-.45));
     cur[drag.id]=[x,y];if(raf)return;raf=requestAnimationFrame(()=>{raf=0;if(!drag)return;place(drag.t,cur[drag.id]);drawArrows(curC,cur);if(S.step===2)renderInfo(curC,cur);});});
   const end=()=>{if(!drag||drag.t!==t)return;if(raf){cancelAnimationFrame(raf);raf=0;}t.classList.remove('drag');const k=vkey(S.step);
     S.ov[k]=Object.assign({},S.ov[k],{[drag.id]:cur[drag.id].map(v=>Math.round(v*100)/100)});drag=null;save();tick();render();};
