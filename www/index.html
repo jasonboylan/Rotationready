@@ -245,6 +245,40 @@ body.focus.matchon .courtscroll{width:min(100%,(100dvh - 312px - env(safe-area-i
   background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;max-width:min(92vw,520px);text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25);transition:opacity .2s,transform .2s}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
+/* stats */
+.mb-in{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px;min-height:38px;min-width:0;width:min(46%,220px)}
+.sheet{position:fixed;inset:0;z-index:70;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 32px) max(16px,env(safe-area-inset-left,0px))}
+.sheet-in{max-width:760px;margin:0 auto;display:grid;gap:14px}
+.sh-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sh-head h2{margin:0;font-family:var(--display);text-transform:uppercase;letter-spacing:.02em;font-size:1.5rem;flex:1}
+.sh-head select{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-height:40px;padding:4px 8px;max-width:100%;font-weight:600}
+.sh-btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-height:40px;padding:6px 12px;font-weight:700}
+.sh-btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.sh-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px;min-width:0}
+.sh-card h3{margin:0;font-family:var(--display);text-transform:uppercase;letter-spacing:.02em;font-size:1.1rem}
+.sh-card p{margin:0;color:var(--muted);font-size:.86rem;line-height:1.45}
+.sh-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.sh-sum div{background:var(--bg);border-radius:10px;padding:10px 12px}
+.sh-sum b{display:block;font-family:var(--display);font-size:1.6rem;font-variant-numeric:tabular-nums;line-height:1.1}
+.sh-sum span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.tbl{overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.9rem}
+.tbl th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl tr.worst td{background:color-mix(in srgb,var(--bad) 10%,transparent)}
+.tbl tr.best td{background:color-mix(in srgb,var(--ok) 10%,transparent)}
+.tbl small{color:var(--muted)}
+@media (max-width:480px){.tbl small{display:none}.tbl td,.tbl th{padding:7px 5px}}
+.pos{color:var(--ok);font-weight:700}.neg{color:var(--bad);font-weight:700}
+.bar{display:inline-block;height:8px;border-radius:4px;background:var(--brand);vertical-align:middle;margin-left:6px;opacity:.8}
+.sh-empty{text-align:center;padding:30px 10px;color:var(--muted)}
+.sh-list{display:grid;gap:6px}
+.sh-list .it{display:flex;gap:8px;align-items:center;justify-content:space-between;background:var(--bg);border-radius:10px;padding:8px 10px;font-size:.9rem}
+.sh-list .it small{color:var(--muted)}
+.sh-list button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;min-height:34px;font-weight:600}
+
 </style>
 
 <main class="app">
@@ -290,7 +324,7 @@ body.focus.matchon .courtscroll{width:min(100%,(100dvh - 312px - env(safe-area-i
         <div class="serve-ball" id="ball" hidden></div>
       </div>
     </div></div>
-    <div class="zoombar"><button id="fsBtn" class="fsbtn" aria-label="Show the court full screen">⤢ Full screen</button><button id="matchBtn" class="fsbtn" aria-label="Start match mode">● Match mode</button></div>
+    <div class="zoombar"><button id="fsBtn" class="fsbtn" aria-label="Show the court full screen">⤢ Full screen</button><button id="matchBtn" class="fsbtn" aria-label="Start match mode">● Match mode</button><button id="statsBtn" class="fsbtn" aria-label="Open stats">▤ Stats</button></div>
     <div class="steps" id="steps"></div>
     <div class="info" id="info"></div>
     <div class="focusbar" id="focusBar"></div>
@@ -601,6 +635,7 @@ document.addEventListener('click',e=>{
   else if(b.id==='fsBtn'){enterFocus();}
   else if(b.id==='fsExit'){exitFocus();}
   else if(b.id==='matchBtn'){openMatch();}
+  else if(b.id==='statsBtn'){openStats();}
   else if(b.dataset.act&&MATCH_ACTS[b.dataset.act]){MATCH_ACTS[b.dataset.act](b);}
   else if(b.id==='fsAgain'){goFull();setTimeout(syncFull,400);}
   else if(b.dataset.act==='rotPrev'){stopPlay();S.rot=S.rot===1?6:S.rot-1;save();render();}
@@ -756,13 +791,14 @@ function toast(msg){let t=document.getElementById('toast');if(!t){t=document.cre
 function pName(id){const p=info(S.sys,id);return (p.num?'#'+p.num+' ':'')+p.name;}
 function usName(){return (S.team&&S.team.name)||'Us';}
 function libFor(){if(!SYS[S.sys].lib||!S.libero)return null;const c=lineup();return c.liberoFor?c.liberoFor.id:null;}
-function openMatch(){const k=S.match&&S.match.subLimit||12;S.match={on:true,pick:true,us:0,them:0,set:1,setsUs:0,setsThem:0,subs:0,subLimit:k,hist:[]};save();render();
+function openMatch(){const k=S.match&&S.match.subLimit||12;archiveMatch();S.match={on:true,pick:true,us:0,them:0,set:1,setsUs:0,setsThem:0,subs:0,subLimit:k,hist:[],log:[],setScores:[],opp:'',event:S.lastEvent||'',date:new Date().toISOString(),id:'m'+Date.now()};save();render();
   const mb=document.getElementById('matchBar');if(mb)mb.scrollIntoView({block:'nearest',behavior:'smooth'});}
 function startSet(weServe){const m=S.match;m.pick=false;S.mode=weServe?'serve':'receive';S.step=2;stopPlay();save();tk();render();
   toast(weServe?`Set ${m.set}: we serve first. ${serverLine()}`:`Set ${m.set}: we receive first.`);}
 function serverLine(){const c=lineup();return c.server?`${pName(c.server.id)} serves.`:'';}
 function point(us){const m=S.match;if(!m||m.pick)return;
   m.hist.push({us:m.us,them:m.them,rot:S.rot,mode:S.mode});if(m.hist.length>300)m.hist.shift();
+  {const c0=lineup();(m.log=m.log||[]).push({set:m.set,won:!!us,rot:S.rot,mode:S.mode,sys:S.sys,on:c0.ps.map(q=>pName(q.id)),srv:S.mode==='serve'&&c0.server?pName(c0.server.id):null});}
   const before=libFor();let msg='';
   if(us){m.us++;if(S.mode==='receive'){S.rot=S.rot===6?1:S.rot+1;S.mode='serve';msg=`Side out. Rotation ${S.rot}.`;}}
   else{m.them++;if(S.mode==='serve'){S.mode='receive';msg='They win the serve. We receive.';}}
@@ -774,23 +810,25 @@ function point(us){const m=S.match;if(!m||m.pick)return;
     else if(before&&!after)msg+=` ${pName(before)} back in.`+(c.mbServes?` ${L} sits while ${pName(c.mbServes.id)} serves.`:'');
     else if(!before&&after)msg+=` ${L} in for ${pName(after)}.`;}
   if(msg)toast(msg.trim());}
-function undoPoint(){const m=S.match;if(!m||!m.hist.length){toast('Nothing to undo.');return;}const h=m.hist.pop();m.us=h.us;m.them=h.them;S.rot=h.rot;S.mode=h.mode;S.step=2;save();render();toast(`Undone. ${m.us}–${m.them}, rotation ${S.rot}.`);}
+function undoPoint(){const m=S.match;if(!m||!m.hist.length){toast('Nothing to undo.');return;}const h=m.hist.pop();if(m.log&&m.log.length)m.log.pop();m.us=h.us;m.them=h.them;S.rot=h.rot;S.mode=h.mode;S.step=2;save();render();toast(`Undone. ${m.us}–${m.them}, rotation ${S.rot}.`);}
 function nextSet(b){const m=S.match;if(!b.dataset.armed){b.dataset.armed='1';b.textContent='Tap to confirm';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Next set';}},3000);return;}
   if(m.us>m.them)m.setsUs++;else if(m.them>m.us)m.setsThem++;
+  (m.setScores=m.setScores||[]).push([m.us,m.them]);
   m.set++;m.us=0;m.them=0;m.subs=0;m.hist=[];m.pick=true;save();render();toast(`Set ${m.set}. Pick the starting rotation, then who serves.`);}
 function endMatch(b){if(!b.dataset.armed){b.dataset.armed='1';b.textContent='Tap to end';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='End';}},3000);return;}
-  S.match.on=false;save();render();toast('Match mode off.');}
+  const saved=archiveMatch(true);S.match.on=false;save();render();toast(saved?'Match saved. Open Stats to look back at it.':'Match mode off.');}
 const MATCH_ACTS={ptUs:()=>point(true),ptThem:()=>point(false),undo:undoPoint,
   subPlus:()=>{S.match.subs++;save();render();if(S.match.subs>=S.match.subLimit)toast(`That's ${S.match.subs} of ${S.match.subLimit} subs this set.`);},
   subMinus:()=>{S.match.subs=Math.max(0,S.match.subs-1);save();render();},
   weServe:()=>startSet(true),theyServe:()=>startSet(false),nextSet:b=>nextSet(b),endMatch:b=>endMatch(b),
-  cancelMatch:()=>{S.match.on=false;save();render();}};
+  cancelMatch:()=>{S.match.on=false;save();render();},openStats:()=>openStats()};
 function subsCls(m){return m.subs>=m.subLimit?'full':m.subs>=m.subLimit-2?'warn':'';}
 function renderMatch(){
   const on=matchOn(),mb=document.getElementById('matchBar'),btn=document.getElementById('matchBtn');
   document.body.classList.toggle('matchon',on&&!S.match.pick);if(btn)btn.hidden=on;if(!mb)return;mb.hidden=!on;if(!on){mb.innerHTML='';return;}
   const m=S.match,ball='<span class="mb-ball" aria-label="serving"></span>';
   if(m.pick){mb.innerHTML=`<div class="mb-pick"><div class="q">Set ${m.set}${m.set>1?` · Sets ${m.setsUs}–${m.setsThem}`:''}: who serves first?</div>
+      ${m.set===1?`<div class="row"><input type="text" id="mOpp" class="mb-in" placeholder="Opponent" maxlength="30" value="${esc(m.opp||'')}" aria-label="Opponent"><input type="text" id="mEvent" class="mb-in" list="evList" placeholder="Event or tournament" maxlength="40" value="${esc(m.event||'')}" aria-label="Event or tournament"><datalist id="evList">${events().map(e=>`<option value="${esc(e)}">`).join('')}</datalist></div>`:''}
       <div class="mb-note">Starting in rotation ${S.rot}. Change the rotation or lineup first if you need to.</div>
       <div class="row"><button class="go" data-act="weServe">We serve</button><button class="go" data-act="theyServe">They serve</button></div>
       <div class="row"><label class="mb-note" for="subLimit">Subs per set</label><select id="subLimit">${[6,12,15,18].map(n=>`<option ${n===m.subLimit?'selected':''}>${n}</option>`).join('')}</select>${m.set===1&&!m.hist.length?'<button data-act="cancelMatch">Cancel</button>':''}</div></div>`;
@@ -802,13 +840,112 @@ function renderMatch(){
       <button class="mb-team ${usServe?'':'serving'}" data-act="ptThem" aria-label="Point for opponent"><span class="mb-name">Them${usServe?'':ball}</span><span class="mb-pts">${m.them}</span><span class="mb-plus">+1</span></button>
     </div>
     <div class="mb-tools"><span class="mb-subs ${subsCls(m)}">Subs ${m.subs}/${m.subLimit}</span><button data-act="subMinus" aria-label="One less sub">−</button><button data-act="subPlus" aria-label="One more sub">+</button>
-      <button data-act="undo">↶ Undo</button><button data-act="nextSet">Next set</button><button data-act="endMatch">End</button></div>`;
+      <button data-act="undo">↶ Undo</button><button data-act="openStats">Stats</button><button data-act="nextSet">Next set</button><button data-act="endMatch">End</button></div>`;
 }
 function focusScore(){if(!matchOn()||S.match.pick)return '';const m=S.match,us=S.mode==='serve';
   return `<div class="frow fscore"><button class="fpt ${us?'serving':''}" data-act="ptUs"><b>${m.us}</b><small>${esc(usName()).slice(0,10)} +1</small></button>
     <div class="fset"><span>Set ${m.set}</span><span class="mb-subs ${subsCls(m)}" style="font-family:var(--body);font-size:.7rem">Subs ${m.subs}/${m.subLimit}</span></div>
     <button class="fpt ${us?'':'serving'}" data-act="ptThem"><b>${m.them}</b><small>Them +1</small></button><button data-act="undo" aria-label="Undo last point">↶</button></div>`;}
 document.addEventListener('change',e=>{if(e.target.id==='subLimit'&&S.match){S.match.subLimit=+e.target.value;save();}});
+document.addEventListener('input',e=>{if(!S.match)return;if(e.target.id==='mOpp'){S.match.opp=e.target.value.trim();save();}else if(e.target.id==='mEvent'){S.match.event=e.target.value.trim();S.lastEvent=S.match.event;save();}});
+
+/* ---------- stats ---------- */
+function events(){const set=new Set();(S.matches||[]).forEach(m=>{if(m.event)set.add(m.event)});if(S.match&&S.match.event)set.add(S.match.event);return [...set];}
+function archiveMatch(force){const m=S.match;if(!m||!m.log||!m.log.length||m.saved)return false;
+  const sets=(m.setScores||[]).slice();if(m.us||m.them)sets.push([m.us,m.them]);
+  const rec={id:m.id||('m'+Date.now()),date:m.date||new Date().toISOString(),opp:m.opp||'',event:m.event||'',sets,log:m.log.slice()};
+  S.matches=(S.matches||[]).filter(x=>x.id!==rec.id);S.matches.unshift(rec);m.saved=true;return true;}
+function liveRec(){const m=S.match;if(!m||!m.log||!m.log.length||m.saved)return null;const sets=(m.setScores||[]).slice();if(m.us||m.them)sets.push([m.us,m.them]);
+  return {id:m.id,date:m.date,opp:m.opp||'',event:m.event||'',sets,log:m.log,live:true};}
+function allRecs(){const r=(S.matches||[]).slice();const l=liveRec();if(l)r.unshift(l);return r;}
+function mLabel(r){const d=new Date(r.date);const ds=isNaN(d)?'':d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  const w=r.sets.filter(x=>x[0]>x[1]).length,l=r.sets.filter(x=>x[1]>x[0]).length;
+  return `${r.live?'Now: ':''}vs ${r.opp||'Opponent'}${ds?' · '+ds:''} · ${w}–${l}`;}
+function scopeRecs(sc){const all=allRecs();if(!sc||sc==='all')return all;if(sc.startsWith('ev:'))return all.filter(r=>r.event===sc.slice(3));if(sc.startsWith('m:'))return all.filter(r=>r.id===sc.slice(2));return all;}
+function agg(recs){
+  const rot={},pl={},sv={};let won=0,lost=0,setsW=0,setsL=0;
+  for(let i=1;i<=6;i++)rot[i]={w:0,l:0,rw:0,rt:0,sw:0,st:0};
+  recs.forEach(r=>{r.sets.forEach(x=>{if(x[0]>x[1])setsW++;else if(x[1]>x[0])setsL++;});
+    let run=0,runBy=null;
+    r.log.forEach(e=>{const R=rot[e.rot];if(e.won){won++;R.w++;}else{lost++;R.l++;}
+      if(e.mode==='receive'){R.rt++;if(e.won)R.rw++;}else{R.st++;if(e.won)R.sw++;}
+      e.on.forEach(n=>{const P=pl[n]=pl[n]||{w:0,l:0};if(e.won)P.w++;else P.l++;});
+      if(e.srv){const V=sv[e.srv]=sv[e.srv]||{c:0,w:0,run:0};V.c++;if(e.won)V.w++;
+        if(runBy===e.srv&&e.won)run++;else{run=e.won?1:0;runBy=e.srv;}V.run=Math.max(V.run,run);}
+      else{run=0;runBy=null;}});});
+  return {rot,pl,sv,won,lost,setsW,setsL,n:recs.length};}
+const pct=(a,b)=>b?Math.round(a*100/b)+'%':'–';
+const pm=v=>`<span class="${v>0?'pos':v<0?'neg':''}">${v>0?'+':''}${v}</span>`;
+let statScope=null;
+function openStats(){let sh=document.getElementById('statsSheet');
+  if(!sh){sh=document.createElement('section');sh.id='statsSheet';sh.className='sheet';sh.setAttribute('aria-label','Stats');document.body.appendChild(sh);
+    sh.addEventListener('click',statsClick);sh.addEventListener('change',e=>{if(e.target.id==='stScope'){statScope=e.target.value;drawStats();}});}
+  if(!statScope){const l=liveRec();statScope=l?'m:'+l.id:(S.matches&&S.matches[0]&&S.matches[0].event?'ev:'+S.matches[0].event:(S.matches&&S.matches[0]?'m:'+S.matches[0].id:'all'));}
+  {const t=document.getElementById('toast');if(t)t.classList.remove('show');}
+  sh.hidden=false;document.body.style.overflow='hidden';drawStats();sh.scrollTop=0;}
+function closeStats(){const sh=document.getElementById('statsSheet');if(sh)sh.hidden=true;document.body.style.overflow='';}
+function drawStats(){const sh=document.getElementById('statsSheet');if(!sh)return;
+  const recs=allRecs(),evs=[...new Set(recs.map(r=>r.event).filter(Boolean))];
+  if(statScope&&statScope!=='all'&&!scopeRecs(statScope).length)statScope='all';
+  const opts=[`<option value="all"${statScope==='all'?' selected':''}>All matches (${recs.length})</option>`]
+    .concat(evs.map(e=>{const n=recs.filter(r=>r.event===e).length;return `<option value="ev:${esc(e)}"${statScope==='ev:'+e?' selected':''}>${esc(e)} (${n} match${n===1?'':'es'})</option>`;}))
+    .concat(recs.map(r=>`<option value="m:${r.id}"${statScope==='m:'+r.id?' selected':''}>${esc(mLabel(r))}</option>`));
+  const head=`<div class="sh-head"><h2>Stats</h2><button class="sh-btn" data-st="close">Done</button></div>
+    ${recs.length?`<div class="sh-head"><select id="stScope" aria-label="Which matches">${opts.join('')}</select></div>`:''}`;
+  if(!recs.length){sh.innerHTML=`<div class="sheet-in">${head}<div class="sh-card sh-empty">No points recorded yet.<br>Start <b>Match mode</b> and tap +1 for each point. Stats build up here, match by match.</div></div>`;return;}
+  const sel=scopeRecs(statScope),A=agg(sel),tot=A.won+A.lost;
+  const rots=[1,2,3,4,5,6].map(i=>({i,...A.rot[i],pm:A.rot[i].w-A.rot[i].l})),played=rots.filter(r=>r.w+r.l);
+  const worst=played.length>1?played.reduce((a,b)=>b.pm<a.pm?b:a):null,best=played.length>1?played.reduce((a,b)=>b.pm>a.pm?b:a):null;
+  const rotRows=rots.map(r=>`<tr class="${worst&&r.i===worst.i&&r.pm<0?'worst':best&&r.i===best.i&&r.pm>0?'best':''}"><td>Rotation ${r.i}</td><td>${r.w}</td><td>${r.l}</td><td>${pm(r.pm)}</td><td>${pct(r.rw,r.rt)} <small>(${r.rw}/${r.rt})</small></td><td>${pct(r.sw,r.st)} <small>(${r.sw}/${r.st})</small></td></tr>`).join('');
+  const pls=Object.entries(A.pl).map(([n,v])=>({n,...v,pm:v.w-v.l,t:v.w+v.l})).sort((a,b)=>b.pm-a.pm||b.t-a.t);
+  const maxT=Math.max(1,...pls.map(x=>x.t));
+  const plRows=pls.map(x=>`<tr><td>${esc(x.n)}</td><td>${x.t}<span class="bar" style="width:${Math.round(40*x.t/maxT)}px"></span></td><td>${x.w}</td><td>${x.l}</td><td>${pm(x.pm)}</td><td>${pct(x.w,x.t)}</td></tr>`).join('');
+  const svs=Object.entries(A.sv).map(([n,v])=>({n,...v})).sort((a,b)=>b.w-a.w||b.c-a.c);
+  const svRows=svs.map(x=>`<tr><td>${esc(x.n)}</td><td>${x.c}</td><td>${x.w}</td><td>${pct(x.w,x.c)}</td><td>${x.run}</td></tr>`).join('');
+  const recRx=A.setsW+A.setsL?`${A.setsW}–${A.setsL}`:'–';
+  const list=sel.map(r=>`<div class="it"><span>${esc(mLabel(r))}<br><small>${esc(r.event||'No event')} · sets ${r.sets.map(x=>x.join('–')).join(', ')||'–'}</small></span>${r.live?'':`<button data-st="del" data-id="${r.id}">Delete</button>`}</div>`).join('');
+  sh.innerHTML=`<div class="sheet-in">${head}
+    <div class="sh-card"><div class="sh-sum">
+      <div><span>Matches</span><b>${A.n}</b></div><div><span>Sets won–lost</span><b>${recRx}</b></div>
+      <div><span>Points won</span><b>${A.won}</b></div><div><span>Points lost</span><b>${A.lost}</b></div>
+      <div><span>Side-out</span><b>${pct(rots.reduce((a,r)=>a+r.rw,0),rots.reduce((a,r)=>a+r.rt,0))}</b></div>
+      <div><span>Point-scoring</span><b>${pct(rots.reduce((a,r)=>a+r.sw,0),rots.reduce((a,r)=>a+r.st,0))}</b></div></div>
+      <div class="row-actions"><button class="sh-btn primary" data-st="csv">Export spreadsheet</button><button class="sh-btn" data-st="copy">Copy summary</button></div>
+      <p id="stMsg" aria-live="polite"></p></div>
+    <div class="sh-card"><h3>By rotation</h3><p>Side-out % is how often you win the point when receiving. On serve is how often you win it on your own serve.${worst&&worst.pm<0?` Rotation ${worst.i} is costing the most points.`:''}</p>
+      <div class="tbl"><table><thead><tr><th>Rotation</th><th>Won</th><th>Lost</th><th>+/−</th><th>Side-out</th><th>On serve</th></tr></thead><tbody>${rotRows}</tbody></table></div></div>
+    <div class="sh-card"><h3>Players on the court</h3><p>Points won and lost while each player was on the court. Plus/minus shows the team's net score with them in.</p>
+      <div class="tbl"><table><thead><tr><th>Player</th><th>Points</th><th>Won</th><th>Lost</th><th>+/−</th><th>Win %</th></tr></thead><tbody>${plRows}</tbody></table></div></div>
+    <div class="sh-card"><h3>Serving</h3><p>Points played on each player's serve. Best run is the most points in a row on one turn at serve.</p>
+      ${svRows?`<div class="tbl"><table><thead><tr><th>Server</th><th>Serves</th><th>Won</th><th>Win %</th><th>Best run</th></tr></thead><tbody>${svRows}</tbody></table></div>`:'<p>No serving points yet.</p>'}</div>
+    <div class="sh-card"><h3>Matches in this view</h3><div class="sh-list">${list}</div></div>
+  </div>`;}
+function csvOf(recs){const q=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const rows=[['Date','Event','Opponent','Set','Point','Score (us-them)','Result','Rotation','Phase','Server','On court']];
+  recs.forEach(r=>{const sc={};r.log.forEach((e,i)=>{const k=e.set;sc[k]=sc[k]||[0,0];if(e.won)sc[k][0]++;else sc[k][1]++;
+    rows.push([(r.date||'').slice(0,10),r.event,r.opp,e.set,i+1,sc[k].join('-'),e.won?'Won':'Lost',e.rot,e.mode==='serve'?'Serving':'Receiving',e.srv||'',e.on.join('; ')]);});});
+  return rows.map(x=>x.map(q).join(',')).join('\n');}
+function summaryText(){const sel=scopeRecs(statScope),A=agg(sel);const lines=[`Stats: ${statScope==='all'?'All matches':statScope.startsWith('ev:')?statScope.slice(3):mLabel(sel[0]||{sets:[],date:''})}`,
+  `Sets ${A.setsW}-${A.setsL} · Points ${A.won}-${A.lost}`,'','By rotation (won-lost, side-out %):'];
+  for(let i=1;i<=6;i++){const R=A.rot[i];lines.push(`R${i}: ${R.w}-${R.l} (${R.w-R.l>0?'+':''}${R.w-R.l}), side-out ${pct(R.rw,R.rt)}`);}
+  lines.push('','Plus/minus:');Object.entries(A.pl).map(([n,v])=>[n,v.w-v.l,v.w+v.l]).sort((a,b)=>b[1]-a[1]).forEach(([n,d,t])=>lines.push(`${n}: ${d>0?'+':''}${d} (${t} pts)`));
+  return lines.join('\n');}
+async function exportCsv(){const recs=scopeRecs(statScope),csv=csvOf(recs),name=`rotation-stats-${new Date().toISOString().slice(0,10)}.csv`,msg=t=>{const m=document.getElementById('stMsg');if(m)m.textContent=t;};
+  try{const P=window.Capacitor&&window.Capacitor.Plugins;
+    if(P&&P.Filesystem&&P.Share){const w=await P.Filesystem.writeFile({path:name,data:csv,directory:'CACHE',encoding:'utf8'});await P.Share.share({title:name,url:w.uri});return;}
+    const file=new File([csv],name,{type:'text/csv'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return;}
+    const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+    msg('Spreadsheet saved to your downloads. If nothing downloaded, use Copy summary.');}
+  catch(e){if(e&&e.name==='AbortError')return;msg('Export did not open here. Use Copy summary instead.');}}
+async function copySummary(){const t=summaryText(),m=document.getElementById('stMsg');
+  try{await navigator.clipboard.writeText(t);if(m)m.textContent='Summary copied. Paste it into a text or email.';}
+  catch(e){if(m)m.textContent='Copy was blocked here. Select the text below and copy it.';const pre=document.createElement('pre');pre.textContent=t;pre.style.whiteSpace='pre-wrap';pre.style.userSelect='text';m.after(pre);}}
+function statsClick(e){const b=e.target.closest('[data-st]');if(!b)return;const a=b.dataset.st;
+  if(a==='close')closeStats();else if(a==='csv')exportCsv();else if(a==='copy')copySummary();
+  else if(a==='del'){if(!b.dataset.armed){b.dataset.armed='1';b.textContent='Tap to delete';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Delete';}},3000);return;}
+    S.matches=(S.matches||[]).filter(r=>r.id!==b.dataset.id);save();drawStats();}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const sh=document.getElementById('statsSheet');if(sh&&!sh.hidden)closeStats();}});
 
 buildStatic();renderPanel();fillTeamForm();applyTeam();applyZoom();render();
 })();
