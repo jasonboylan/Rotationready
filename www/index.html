@@ -187,7 +187,7 @@ body.focus{overflow:hidden}
 body.focus .board{position:fixed;inset:0;z-index:40;background:var(--bg);margin:0;display:flex;flex-direction:column;justify-content:safe center;align-items:center;gap:8px;overflow-y:auto;
   padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 8px) max(10px,env(safe-area-inset-left,0px))}
 body.focus .zoombar,body.focus #steps,body.focus #info{display:none}
-body.focus .courtscroll{overflow:visible;flex:none;width:min(100%,(100dvh - 200px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * .93)}
+body.focus .courtscroll{overflow:visible;flex:none;width:min(100%,(100dvh - 250px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * .93)}
 body.focus .courtwrap{width:100%}
 body.focus .focusbar{display:grid;gap:6px;justify-items:center}
 .focusbar .fcap{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:.95rem}
@@ -198,6 +198,8 @@ body.focus .focusbar{display:grid;gap:6px;justify-items:center}
 .focusbar .fmode{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
 .focusbar .fmode button{border:0;min-width:108px;min-height:38px;background:transparent}
 .focusbar .fmode button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+.focusbar .flab{width:auto;text-align:right;padding-right:4px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.focusbar .frot button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
 .focusbar .fsep{width:1px;align-self:stretch;background:var(--line);margin-inline:2px}
 body.focus .fsexit{display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:max(10px,env(safe-area-inset-right,0px));z-index:5;
   border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-weight:700;min-height:36px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
@@ -401,7 +403,7 @@ function basePos(step,c){
 }
 const vkey=step=>[S.sys,S.libero?1:0,S.mode,S.rot,step].join('|');
 /* keep every player who is on the court fully inside the lines, including their name label */
-const IN={x0:.62,x1:8.38,y0:.55,y1:7.9};
+const IN={x0:.85,x1:8.15,y0:.55,y1:7.9};
 function keepIn(pos,c){const srv=S.mode==='serve'&&c.server?c.server.id:null;
   for(const id in pos){if(id===srv&&pos[id][1]>9)continue;const q=pos[id];
     q[0]=Math.min(IN.x1,Math.max(IN.x0,q[0]));q[1]=Math.min(IN.y1,Math.max(IN.y0,q[1]));}
@@ -442,9 +444,8 @@ function render(){
   const fb=document.getElementById('focusBar');
   if(fb)fb.innerHTML=`<div class="frow fmode" role="group" aria-label="Receiving or serving"><button data-mode="receive" aria-pressed="${S.mode==='receive'}">Receiving</button><button data-mode="serve" aria-pressed="${S.mode==='serve'}">Serving</button></div>
     <div class="fcap">Rotation ${S.rot} · ${STEPS[S.mode][S.step-1]}</div>
-    <div class="frow"><button data-act="rotPrev" aria-label="Previous rotation">‹</button><button data-act="rotNext" aria-label="Next rotation">›</button><span class="fsep"></span>
-    ${[1,2,3,4].map(n=>`<button data-step="${n}" aria-pressed="${S.step===n}" aria-label="Step ${n}: ${STEPS[S.mode][n-1]}">${n}</button>`).join('')}
-    <button class="fplay" data-act="play" aria-label="Play all steps">${playT?'■':'▶'}</button></div>`;
+    <div class="frow frot"><span class="flab">Rot</span>${[1,2,3,4,5,6].map(n=>`<button data-rot="${n}" aria-pressed="${S.rot===n}" aria-label="Rotation ${n}">${n}</button>`).join('')}</div>
+    <div class="frow"><span class="flab">Step</span>${[1,2,3,4].map(n=>`<button data-step="${n}" aria-pressed="${S.step===n}" aria-label="Step ${n}: ${STEPS[S.mode][n-1]}">${n}</button>`).join('')}</div>`;
   document.getElementById('zoneNums').innerHTML=S.step===1?Object.entries(ZXY).map(([z,[x,y]])=>`<text class="c-zone" x="${x}" y="${y+.55}" font-size="1.6" text-anchor="middle">${z}</text>`).join(''):'';
 
   const pos=getPos(S.step,c);cur=pos;
