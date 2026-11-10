@@ -180,6 +180,25 @@ h1{font-family:var(--display);font-weight:700;font-size:1.6rem;letter-spacing:.0
 .toggle input{width:20px;height:20px;accent-color:var(--accent)}
 .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.78rem;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--rc);margin-right:4px;vertical-align:-1px}
+/* full-screen court */
+.zoombar .fsbtn{padding-inline:10px;font-size:.85rem;color:var(--brand);border-color:var(--brand)}
+.focusbar,.fsexit{display:none}
+body.focus{overflow:hidden}
+body.focus .board{position:fixed;inset:0;z-index:40;background:var(--bg);margin:0;display:flex;flex-direction:column;justify-content:safe center;align-items:center;gap:8px;overflow-y:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 8px) max(10px,env(safe-area-inset-left,0px))}
+body.focus .zoombar,body.focus #steps,body.focus #info{display:none}
+body.focus .courtscroll{overflow:visible;flex:none;width:min(100%,(100dvh - 150px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * .8)}
+body.focus .courtwrap{width:100%}
+body.focus .focusbar{display:grid;gap:6px;justify-items:center}
+.focusbar .fcap{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:.95rem}
+.focusbar .frow{display:flex;gap:6px;align-items:center}
+.focusbar button{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-width:42px;min-height:42px;font-weight:700;font-variant-numeric:tabular-nums}
+.focusbar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.focusbar .fplay{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.focusbar .fsep{width:1px;align-self:stretch;background:var(--line);margin-inline:2px}
+body.focus .fsexit{display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:max(10px,env(safe-area-inset-right,0px));z-index:5;
+  border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-weight:700;min-height:36px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+
 </style>
 
 <main class="app">
@@ -224,9 +243,11 @@ h1{font-family:var(--display);font-weight:700;font-size:1.6rem;letter-spacing:.0
         <div class="serve-ball" id="ball" hidden></div>
       </div>
     </div></div>
-    <div class="zoombar"><span>Court size</span><button id="zOut" aria-label="Smaller court">−</button><span id="zLbl">100%</span><button id="zIn" aria-label="Bigger court">+</button><button id="zFit">Fit</button></div>
+    <div class="zoombar"><span>Court size</span><button id="zOut" aria-label="Smaller court">−</button><span id="zLbl">100%</span><button id="zIn" aria-label="Bigger court">+</button><button id="zFit">Fit</button><button id="fsBtn" class="fsbtn" aria-label="Show the court full screen">⤢ Full screen</button></div>
     <div class="steps" id="steps"></div>
     <div class="info" id="info"></div>
+    <div class="focusbar" id="focusBar"></div>
+    <button class="fsexit" id="fsExit" aria-label="Exit full screen">✕ Exit</button>
   </section>
 
   <aside class="panel" id="panel"></aside>
@@ -409,6 +430,11 @@ function render(){
   document.querySelectorAll('[data-rot]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.rot===S.rot));
   document.getElementById('steps').innerHTML=STEPS[S.mode].map((t,i)=>`<button class="step" data-step="${i+1}" aria-pressed="${S.step===i+1}"><b>${i+1}</b><span>${t}</span></button>`).join('')+
     `<button class="play" id="play" aria-label="Play all steps">${playT?'■':'▶'}</button>`;
+  const fb=document.getElementById('focusBar');
+  if(fb)fb.innerHTML=`<div class="fcap">${S.mode==='serve'?'Serving':'Receiving'} · Rotation ${S.rot} · ${STEPS[S.mode][S.step-1]}</div>
+    <div class="frow"><button data-act="rotPrev" aria-label="Previous rotation">‹</button><button data-act="rotNext" aria-label="Next rotation">›</button><span class="fsep"></span>
+    ${[1,2,3,4].map(n=>`<button data-step="${n}" aria-pressed="${S.step===n}" aria-label="Step ${n}: ${STEPS[S.mode][n-1]}">${n}</button>`).join('')}
+    <button class="fplay" data-act="play" aria-label="Play all steps">${playT?'■':'▶'}</button></div>`;
   document.getElementById('zoneNums').innerHTML=S.step===1?Object.entries(ZXY).map(([z,[x,y]])=>`<text class="c-zone" x="${x}" y="${y+.55}" font-size="1.6" text-anchor="middle">${z}</text>`).join(''):'';
 
   const pos=getPos(S.step,c);cur=pos;
@@ -518,7 +544,11 @@ document.addEventListener('click',e=>{
   else if(b.dataset.step){stopPlay();S.step=+b.dataset.step;save();tick();render();}
   else if(b.id==='rotPrev'){stopPlay();S.rot=S.rot===1?6:S.rot-1;save();render();}
   else if(b.id==='rotNext'){stopPlay();S.rot=S.rot===6?1:S.rot+1;save();render();}
-  else if(b.id==='play'){if(playT){stopPlay();render();return;}S.step=1;render();
+  else if(b.id==='fsBtn'){enterFocus();}
+  else if(b.id==='fsExit'){exitFocus();}
+  else if(b.dataset.act==='rotPrev'){stopPlay();S.rot=S.rot===1?6:S.rot-1;save();render();}
+  else if(b.dataset.act==='rotNext'){stopPlay();S.rot=S.rot===6?1:S.rot+1;save();render();}
+  else if(b.id==='play'||b.dataset.act==='play'){if(playT){stopPlay();render();return;}S.step=1;render();
     playT=setInterval(()=>{if(S.step>=4){stopPlay();render();return;}S.step++;render();},1500);render();}
   else if(b.id==='zIn'||b.id==='zOut'||b.id==='zFit'){S.zoom=b.id==='zFit'?1:Math.min(2,Math.max(.6,Math.round(((S.zoom||1)+(b.id==='zIn'?.2:-.2))*10)/10));save();applyZoom();}
   else if(b.id==='resetView'){delete S.ov[vkey(S.step)];save();render();}
@@ -558,7 +588,17 @@ document.addEventListener('change',e=>{
   const lu=S.data[S.sys].lineup,from=lu.indexOf(id),to=+t.value-1;
   [lu[from],lu[to]]=[lu[to],lu[from]];save();renderPanel();render();
 });
+let wake=null;
+function enterFocus(){document.body.classList.add('focus');scrollTo(0,0);
+  try{const el=document.documentElement,rf=el.requestFullscreen||el.webkitRequestFullscreen;if(rf){const r=rf.call(el);if(r&&r.catch)r.catch(()=>{});}}catch(e){}
+  try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(w=>wake=w).catch(()=>{});}catch(e){}
+  render();}
+function exitFocus(){document.body.classList.remove('focus');
+  try{const fe=document.fullscreenElement||document.webkitFullscreenElement,ex=document.exitFullscreen||document.webkitExitFullscreen;if(fe&&ex){const r=ex.call(document);if(r&&r.catch)r.catch(()=>{});}}catch(e){}
+  try{if(wake){wake.release();wake=null;}}catch(e){}
+  render();document.getElementById('fsBtn').focus({preventScroll:false});}
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&document.body.classList.contains('focus')){exitFocus();return;}
   if(e.target.matches('input,select'))return;
   if(e.key==='ArrowRight'){S.step=Math.min(4,S.step+1);render();}
   else if(e.key==='ArrowLeft'){S.step=Math.max(1,S.step-1);render();}
