@@ -279,6 +279,11 @@ body.focus.matchon .courtscroll{width:min(100%,(100dvh - 312px - env(safe-area-i
 .sh-list .it small{color:var(--muted)}
 .sh-list button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;min-height:34px;font-weight:600}
 
+.mb-warn{background:color-mix(in srgb,var(--bad) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--bad) 45%,transparent);color:var(--ink);border-radius:10px;padding:8px 10px;font-size:.85rem;line-height:1.4;text-align:left;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.mb-warn b{color:var(--bad)}
+.mb-warn button{border:1px solid var(--bad);color:var(--bad);background:var(--surface);border-radius:8px;min-height:32px;padding:3px 10px;font-weight:700;margin-left:auto}
+.focusbar .fwarn{max-width:min(92vw,520px);font-size:.78rem;padding:6px 10px}
+
 </style>
 
 <main class="app">
@@ -654,7 +659,7 @@ document.addEventListener('input',e=>{
   if(ds.benchName!==undefined){bench(S.sys)[+ds.benchName].name=e.target.value.trim();save();return;}
   if(ds.benchNum!==undefined){const el=e.target,raw=el.value.replace(/\D/g,'').slice(0,2);if(raw!==el.value)el.value=raw;
     const n=parseInt(raw,10),ok=raw===''||(n>=1&&n<=99);el.setAttribute('aria-invalid',!ok);if(!ok)return;
-    bench(S.sys)[+ds.benchNum].num=raw===''?'':String(n);save();numWarn();return;}
+    bench(S.sys)[+ds.benchNum].num=raw===''?'':String(n);save();numWarn();clearTimeout(window.__nt);window.__nt=setTimeout(render,250);return;}
   const nf=e.target.dataset&&e.target.dataset.numFor;
   if(nf){const el=e.target,raw=el.value.replace(/\D/g,'').slice(0,2);if(raw!==el.value)el.value=raw;
     const n=parseInt(raw,10),ok=raw===''||(n>=1&&n<=99);el.setAttribute('aria-invalid',!ok);
@@ -783,6 +788,19 @@ document.getElementById('tReset').addEventListener('click',e=>{const b=e.current
   else{b.dataset.armed='1';b.textContent='Tap again to restore';setTimeout(()=>{delete b.dataset.armed;b.textContent='Restore default look';},3000);}});
 
 
+
+/* duplicate jersey numbers (starters, libero and bench) */
+function dupNums(){const s=S.sys,d=S.data[s],n=d.nums||{},by={};
+  const add=(num,who)=>{if(!num)return;(by[num]=by[num]||[]).push(who);};
+  [...d.lineup,...(SYS[s].lib?['L']:[])].forEach(id=>add(n[id],info(s,id).name));
+  bench(s).forEach((b,i)=>add(b.num,b.name||('Bench '+(i+1))));
+  return Object.entries(by).filter(([k,v])=>v.length>1).map(([k,v])=>({num:k,who:v}));}
+function dupText(list){return list.map(x=>`#${x.num} is used by ${x.who.join(' and ')}`).join('. ')+'.';}
+function dupBanner(){const dl=dupNums();if(!dl.length)return '';
+  return `<div class="mb-warn" role="alert"><b>Duplicate jersey numbers.</b> ${esc(dupText(dl))} Give each player a different number so stats stay accurate.<button data-act="fixNums">Fix numbers</button></div>`;}
+let lastDup='';
+function checkDupToast(){const t=matchOn()&&!S.match.pick?dupText(dupNums()):'';const k=dupNums().length?t:'';if(k&&k!==lastDup)toast('Duplicate jersey numbers: '+t);lastDup=k;}
+
 /* ---------- match mode ---------- */
 const tk=()=>{try{if(typeof tick==='function')tick();}catch(e){}};
 function matchOn(){return !!(S.match&&S.match.on);}
@@ -821,15 +839,17 @@ const MATCH_ACTS={ptUs:()=>point(true),ptThem:()=>point(false),undo:undoPoint,
   subPlus:()=>{S.match.subs++;save();render();if(S.match.subs>=S.match.subLimit)toast(`That's ${S.match.subs} of ${S.match.subLimit} subs this set.`);},
   subMinus:()=>{S.match.subs=Math.max(0,S.match.subs-1);save();render();},
   weServe:()=>startSet(true),theyServe:()=>startSet(false),nextSet:b=>nextSet(b),endMatch:b=>endMatch(b),
-  cancelMatch:()=>{S.match.on=false;save();render();},openStats:()=>openStats()};
+  cancelMatch:()=>{S.match.on=false;save();render();},openStats:()=>openStats(),fixNums:()=>{if(document.body.classList.contains('focus'))exitFocus();const el=document.querySelector('#panel input.num');const pn=document.getElementById('panel');if(pn)pn.scrollIntoView({behavior:'smooth',block:'start'});if(el)setTimeout(()=>el.focus({preventScroll:true}),400);}};
 function subsCls(m){return m.subs>=m.subLimit?'full':m.subs>=m.subLimit-2?'warn':'';}
 function renderMatch(){
+  checkDupToast();
   const on=matchOn(),mb=document.getElementById('matchBar'),btn=document.getElementById('matchBtn');
   document.body.classList.toggle('matchon',on&&!S.match.pick);if(btn)btn.hidden=on;if(!mb)return;mb.hidden=!on;if(!on){mb.innerHTML='';return;}
   const m=S.match,ball='<span class="mb-ball" aria-label="serving"></span>';
   if(m.pick){mb.innerHTML=`<div class="mb-pick"><div class="q">Set ${m.set}${m.set>1?` · Sets ${m.setsUs}–${m.setsThem}`:''}: who serves first?</div>
       ${m.set===1?`<div class="row"><input type="text" id="mOpp" class="mb-in" placeholder="Opponent" maxlength="30" value="${esc(m.opp||'')}" aria-label="Opponent"><input type="text" id="mEvent" class="mb-in" list="evList" placeholder="Event or tournament" maxlength="40" value="${esc(m.event||'')}" aria-label="Event or tournament"><datalist id="evList">${events().map(e=>`<option value="${esc(e)}">`).join('')}</datalist></div>`:''}
       <div class="mb-note">Starting in rotation ${S.rot}. Change the rotation or lineup first if you need to.</div>
+      ${dupBanner()}
       <div class="row"><button class="go" data-act="weServe">We serve</button><button class="go" data-act="theyServe">They serve</button></div>
       <div class="row"><label class="mb-note" for="subLimit">Subs per set</label><select id="subLimit">${[6,12,15,18].map(n=>`<option ${n===m.subLimit?'selected':''}>${n}</option>`).join('')}</select>${m.set===1&&!m.hist.length?'<button data-act="cancelMatch">Cancel</button>':''}</div></div>`;
     return;}
@@ -839,11 +859,12 @@ function renderMatch(){
       <div class="mb-mid">Set ${m.set}<small>${m.setsUs}–${m.setsThem}</small></div>
       <button class="mb-team ${usServe?'':'serving'}" data-act="ptThem" aria-label="Point for opponent"><span class="mb-name">Them${usServe?'':ball}</span><span class="mb-pts">${m.them}</span><span class="mb-plus">+1</span></button>
     </div>
+    ${dupBanner()}
     <div class="mb-tools"><span class="mb-subs ${subsCls(m)}">Subs ${m.subs}/${m.subLimit}</span><button data-act="subMinus" aria-label="One less sub">−</button><button data-act="subPlus" aria-label="One more sub">+</button>
       <button data-act="undo">↶ Undo</button><button data-act="openStats">Stats</button><button data-act="nextSet">Next set</button><button data-act="endMatch">End</button></div>`;
 }
-function focusScore(){if(!matchOn()||S.match.pick)return '';const m=S.match,us=S.mode==='serve';
-  return `<div class="frow fscore"><button class="fpt ${us?'serving':''}" data-act="ptUs"><b>${m.us}</b><small>${esc(usName()).slice(0,10)} +1</small></button>
+function focusScore(){if(!matchOn()||S.match.pick)return '';const m=S.match,us=S.mode==='serve',dl=dupNums();
+  return (dl.length?`<div class="mb-warn fwarn" role="alert"><b>Duplicate jersey numbers:</b> ${esc(dupText(dl))}</div>`:'')+`<div class="frow fscore"><button class="fpt ${us?'serving':''}" data-act="ptUs"><b>${m.us}</b><small>${esc(usName()).slice(0,10)} +1</small></button>
     <div class="fset"><span>Set ${m.set}</span><span class="mb-subs ${subsCls(m)}" style="font-family:var(--body);font-size:.7rem">Subs ${m.subs}/${m.subLimit}</span></div>
     <button class="fpt ${us?'':'serving'}" data-act="ptThem"><b>${m.them}</b><small>Them +1</small></button><button data-act="undo" aria-label="Undo last point">↶</button></div>`;}
 document.addEventListener('change',e=>{if(e.target.id==='subLimit'&&S.match){S.match.subLimit=+e.target.value;save();}});
