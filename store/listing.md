@@ -32,6 +32,9 @@ Drag any player to try your own formation. Rotation Ready checks rotational orde
 BUILD YOUR ROSTER
 Add jersey numbers (1-99), names, a libero and a six-player bench. Use Sub to swap a bench player in, and they take over that spot in the rotation.
 
+MAKE IT YOUR TEAM'S
+Add your team name, team colors and logo. Choose a wood floor, a classic court, or a court painted in your team colors.
+
 MADE FOR THE GYM
 - Works with no internet connection
 - Built for iPhone and iPad, portrait and landscape
