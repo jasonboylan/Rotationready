@@ -181,7 +181,7 @@ h1{font-family:var(--display);font-weight:700;font-size:1.6rem;letter-spacing:.0
 .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.78rem;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--rc);margin-right:4px;vertical-align:-1px}
 /* full-screen court */
-.zoombar .fsbtn{padding-inline:10px;font-size:.85rem;color:var(--brand);border-color:var(--brand)}
+.zoombar .fsbtn{padding-inline:16px;font-size:.9rem;color:var(--brand);border-color:var(--brand)}
 .focusbar,.fsexit{display:none}
 body.focus{overflow:hidden}
 body.focus .board{position:fixed;inset:0;z-index:40;background:var(--bg);margin:0;display:flex;flex-direction:column;justify-content:safe center;align-items:center;gap:8px;overflow-y:auto;
@@ -243,7 +243,7 @@ body.focus .fsexit{display:block;position:absolute;top:calc(env(safe-area-inset-
         <div class="serve-ball" id="ball" hidden></div>
       </div>
     </div></div>
-    <div class="zoombar"><span>Court size</span><button id="zOut" aria-label="Smaller court">−</button><span id="zLbl">100%</span><button id="zIn" aria-label="Bigger court">+</button><button id="zFit">Fit</button><button id="fsBtn" class="fsbtn" aria-label="Show the court full screen">⤢ Full screen</button></div>
+    <div class="zoombar"><button id="fsBtn" class="fsbtn" aria-label="Show the court full screen">⤢ Full screen</button></div>
     <div class="steps" id="steps"></div>
     <div class="info" id="info"></div>
     <div class="focusbar" id="focusBar"></div>
@@ -415,7 +415,7 @@ function overlaps(pos,c){
 
 /* ---------- rendering ---------- */
 const court=document.getElementById('court'),toks={};let cur={},curC=null,prevPos=null,drag=null,playT=null,raf=0;
-function applyZoom(){const z=S.zoom||1;document.getElementById('courtWrap').style.setProperty('--z',z);document.getElementById('zLbl').textContent=Math.round(z*100)+'%';}
+function applyZoom(){S.zoom=1;document.getElementById('courtWrap').style.setProperty('--z',1);}
 const esc=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
 
 function buildStatic(){
@@ -550,7 +550,6 @@ document.addEventListener('click',e=>{
   else if(b.dataset.act==='rotNext'){stopPlay();S.rot=S.rot===6?1:S.rot+1;save();render();}
   else if(b.id==='play'||b.dataset.act==='play'){if(playT){stopPlay();render();return;}S.step=1;render();
     playT=setInterval(()=>{if(S.step>=4){stopPlay();render();return;}S.step++;render();},1500);render();}
-  else if(b.id==='zIn'||b.id==='zOut'||b.id==='zFit'){S.zoom=b.id==='zFit'?1:Math.min(2,Math.max(.6,Math.round(((S.zoom||1)+(b.id==='zIn'?.2:-.2))*10)/10));save();applyZoom();}
   else if(b.id==='resetView'){delete S.ov[vkey(S.step)];save();render();}
   else if(b.id==='resetAll'){
     if(b.dataset.armed){const s=S.sys;S.data[s]={lineup:SYS[s].players.map(p=>p[0]),names:{}};
