@@ -400,8 +400,14 @@ function basePos(step,c){
   return pos;
 }
 const vkey=step=>[S.sys,S.libero?1:0,S.mode,S.rot,step].join('|');
+/* keep every player who is on the court fully inside the lines, including their name label */
+const IN={x0:.62,x1:8.38,y0:.55,y1:7.9};
+function keepIn(pos,c){const srv=S.mode==='serve'&&c.server?c.server.id:null;
+  for(const id in pos){if(id===srv&&pos[id][1]>9)continue;const q=pos[id];
+    q[0]=Math.min(IN.x1,Math.max(IN.x0,q[0]));q[1]=Math.min(IN.y1,Math.max(IN.y0,q[1]));}
+  return pos;}
 function getPos(step,c){
-  const pos=basePos(step,c),o=S.ov[vkey(step)];
+  const pos=keepIn(basePos(step,c),c),o=S.ov[vkey(step)];
   if(o)for(const id in o)if(pos[id])pos[id]=[...o[id]];
   return pos;
 }
