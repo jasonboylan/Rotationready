@@ -101,7 +101,7 @@ h1{font-family:var(--display);font-weight:700;font-size:1.6rem;letter-spacing:.0
 .zoombar button{border:1px solid var(--line);background:var(--surface);border-radius:8px;min-width:40px;min-height:36px;font-weight:700;font-size:1rem}
 .court{position:relative;width:100%;aspect-ratio:9/9.45;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 .court svg:first-child{border-radius:6px}
-.courtwrap.serving{padding-bottom:16%}
+.courtwrap.serving{padding-bottom:0}
 .court svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .c-free{fill:var(--free)} .c-court{fill:var(--court)} .c-sheen{display:none}
 .court.wood{--court-line:var(--wood-line,#20323a);--arrow:rgba(25,30,32,.72)}
@@ -187,7 +187,7 @@ body.focus{overflow:hidden}
 body.focus .board{position:fixed;inset:0;z-index:40;background:var(--bg);margin:0;display:flex;flex-direction:column;justify-content:safe center;align-items:center;gap:8px;overflow-y:auto;
   padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 8px) max(10px,env(safe-area-inset-left,0px))}
 body.focus .zoombar,body.focus #steps,body.focus #info{display:none}
-body.focus .courtscroll{overflow:visible;flex:none;width:min(100%,(100dvh - 200px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * .8)}
+body.focus .courtscroll{overflow:visible;flex:none;width:min(100%,(100dvh - 200px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * .93)}
 body.focus .courtwrap{width:100%}
 body.focus .focusbar{display:grid;gap:6px;justify-items:center}
 .focusbar .fcap{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:.95rem}
@@ -380,7 +380,7 @@ function basePos(step,c){
   const pos={};
   if(step===1){c.ps.forEach(p=>pos[p.id]=[...ZXY[p.zone]]);return pos;}
   if(S.mode==='serve'&&step===2){
-    c.ps.forEach(p=>{const[x]=ZXY[p.zone];pos[p.id]=p===c.server?[7.7,9.5]:isFront(p.zone)?[x,1.7]:[x,6.2];});return pos;}
+    c.ps.forEach(p=>{const[x]=ZXY[p.zone];pos[p.id]=p===c.server?[7.75,7.9]:isFront(p.zone)?[x,1.7]:[x,6.2];});return pos;}
   if(S.mode==='receive'&&step===2){
     if(S.sys==='6-6'){const W={4:[1.7,3.9],3:[5.2,.9],2:[7.3,3.9],5:[2.3,6.9],6:[4.5,4.7],1:[6.7,6.9]};
       c.ps.forEach(p=>pos[p.id]=[...W[p.zone]]);return repair(pos,c);}
