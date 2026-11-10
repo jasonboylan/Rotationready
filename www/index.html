@@ -622,6 +622,7 @@ function benchRows(s){const b=bench(s),slots=[...S.data[s].lineup,...(SYS[s].lib
     <input type="text" class="num" inputmode="numeric" pattern="[0-9]*" maxlength="2" id="bj-${s}-${i}" data-bench-num="${i}" value="${p.num||''}" placeholder="#" aria-label="Bench ${i+1} jersey number">
     <input type="text" id="bn-${s}-${i}" data-bench-name="${i}" value="${esc(p.name||'')}" placeholder="Bench ${i+1}" maxlength="18">
     <select id="bs-${s}-${i}" data-sub="${i}" class="subsel" aria-label="Sub bench ${i+1} in for"><option value="">Sub ⇄</option>${slots.map(id=>{const q=info(s,id);return `<option value="${id}">for ${q.num?'#'+q.num+' ':''}${esc(q.name)}</option>`;}).join('')}</select></div>`).join('');}
+function refreshSubOpts(){document.querySelectorAll('select[data-sub]').forEach(sel=>{[...sel.options].forEach(o=>{if(!o.value)return;const q=info(S.sys,o.value);o.textContent=`for ${q.num?'#'+q.num+' ':''}${q.name}`;});});}
 function numWarn(){const el=document.getElementById('numWarn');if(!el)return;const n=S.data[S.sys].nums||{},seen={},d=[];
   const ids=[...S.data[S.sys].lineup,...(SYS[S.sys].lib?['L']:[])];const vals=ids.map(id=>n[id]).concat(bench(S.sys).map(b=>b.num));vals.forEach(v=>{if(!v)return;if(seen[v]&&!d.includes(v))d.push(v);seen[v]=1;});
   el.textContent=d.length?'Jersey '+d.map(v=>'#'+v).join(', ')+(d.length>1?' are':' is')+' used more than once.':'';}
@@ -679,9 +680,9 @@ document.addEventListener('input',e=>{
   if(nf){const el=e.target,raw=el.value.replace(/\D/g,'').slice(0,2);if(raw!==el.value)el.value=raw;
     const n=parseInt(raw,10),ok=raw===''||(n>=1&&n<=99);el.setAttribute('aria-invalid',!ok);
     if(!ok)return;S.data[S.sys].nums=S.data[S.sys].nums||{};if(raw==='')delete S.data[S.sys].nums[nf];else S.data[S.sys].nums[nf]=String(n);
-    save();numWarn();clearTimeout(window.__nt);window.__nt=setTimeout(render,250);return;}
+    save();numWarn();refreshSubOpts();clearTimeout(window.__nt);window.__nt=setTimeout(render,250);return;}
   const id=e.target.dataset&&e.target.dataset.nameFor;if(!id)return;
-  S.data[S.sys].names[id]=e.target.value.trim();save();clearTimeout(window.__nt);window.__nt=setTimeout(render,250);
+  S.data[S.sys].names[id]=e.target.value.trim();save();refreshSubOpts();clearTimeout(window.__nt);window.__nt=setTimeout(render,250);
 });
 document.addEventListener('change',e=>{
   const t=e.target;
@@ -842,6 +843,7 @@ function point(us){const m=S.match;if(!m||m.pick)return;
     if(before&&after)msg+=` Libero: ${pName(before)} back in, ${L} now in for ${pName(after)}.`;
     else if(before&&!after)msg+=` ${pName(before)} back in.`+(c.mbServes?` ${L} sits while ${pName(c.mbServes.id)} serves.`:'');
     else if(!before&&after)msg+=` ${L} in for ${pName(after)}.`;}
+  if(setOver([m.us,m.them],m.set-1))msg=`Set ${m.set} to ${m.us>m.them?esc(usName()):'them'}, ${m.us}–${m.them}. Tap Next set when you're ready.`;
   if(msg)toast(msg.trim());}
 function undoPoint(){const m=S.match;if(!m||!m.hist.length){toast('Nothing to undo.');return;}const h=m.hist.pop();if(m.log&&m.log.length)m.log.pop();m.us=h.us;m.them=h.them;S.rot=h.rot;S.mode=h.mode;S.step=2;save();render();toast(`Undone. ${m.us}–${m.them}, rotation ${S.rot}.`);}
 function nextSet(b){const m=S.match;if(!b.dataset.armed){b.dataset.armed='1';b.textContent='Tap to confirm';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Next set';}},3000);return;}
@@ -886,6 +888,8 @@ document.addEventListener('change',e=>{if(e.target.id==='subLimit'&&S.match){S.m
 document.addEventListener('input',e=>{if(!S.match)return;if(e.target.id==='mOpp'){S.match.opp=e.target.value.trim();save();}else if(e.target.id==='mEvent'){S.match.event=e.target.value.trim();S.lastEvent=S.match.event;save();}});
 
 /* ---------- stats ---------- */
+function setOver(x,i){const t=(i===2||i===4)?15:25;return Math.max(x[0],x[1])>=t&&Math.abs(x[0]-x[1])>=2;}
+function doneSets(r){if(!r.live)return r.sets;const last=r.sets[r.sets.length-1];return last&&setOver(last,r.sets.length-1)?r.sets:r.sets.slice(0,-1);}
 function events(){const set=new Set();(S.matches||[]).forEach(m=>{if(m.event)set.add(m.event)});if(S.match&&S.match.event)set.add(S.match.event);return [...set];}
 function archiveMatch(force){const m=S.match;if(!m||!m.log||!m.log.length||m.saved)return false;
   const sets=(m.setScores||[]).slice();if(m.us||m.them)sets.push([m.us,m.them]);
@@ -895,13 +899,13 @@ function liveRec(){const m=S.match;if(!m||!m.log||!m.log.length||m.saved)return 
   return {id:m.id,date:m.date,opp:m.opp||'',event:m.event||'',sets,log:m.log,live:true};}
 function allRecs(){const r=(S.matches||[]).slice();const l=liveRec();if(l)r.unshift(l);return r;}
 function mLabel(r){const d=new Date(r.date);const ds=isNaN(d)?'':d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
-  const done=r.live?r.sets.slice(0,-1):r.sets,w=done.filter(x=>x[0]>x[1]).length,l=done.filter(x=>x[1]>x[0]).length;
+  const done=doneSets(r),w=done.filter(x=>x[0]>x[1]).length,l=done.filter(x=>x[1]>x[0]).length;
   return `${r.live?'Now: ':''}vs ${r.opp||'Opponent'}${ds?' · '+ds:''} · ${w}–${l}`;}
 function scopeRecs(sc){const all=allRecs();if(!sc||sc==='all')return all;if(sc.startsWith('ev:'))return all.filter(r=>r.event===sc.slice(3));if(sc.startsWith('m:'))return all.filter(r=>r.id===sc.slice(2));return all;}
 function agg(recs){
   const rot={},pl={},sv={};let won=0,lost=0,setsW=0,setsL=0;
   for(let i=1;i<=6;i++)rot[i]={w:0,l:0,rw:0,rt:0,sw:0,st:0};
-  recs.forEach(r=>{(r.live?r.sets.slice(0,-1):r.sets).forEach(x=>{if(x[0]>x[1])setsW++;else if(x[1]>x[0])setsL++;});
+  recs.forEach(r=>{doneSets(r).forEach(x=>{if(x[0]>x[1])setsW++;else if(x[1]>x[0])setsL++;});
     let run=0,runBy=null;
     r.log.forEach(e=>{const R=rot[e.rot];if(e.won){won++;R.w++;}else{lost++;R.l++;}
       if(e.mode==='receive'){R.rt++;if(e.won)R.rw++;}else{R.st++;if(e.won)R.sw++;}
@@ -921,6 +925,7 @@ function delAllCard(){const n=allRecs().length,pts=allRecs().reduce((a,r)=>a+r.l
 function openStats(){let sh=document.getElementById('statsSheet');
   if(!sh){sh=document.createElement('section');sh.id='statsSheet';sh.className='sheet';sh.setAttribute('aria-label','Stats');document.body.appendChild(sh);
     sh.addEventListener('click',statsClick);sh.addEventListener('change',e=>{if(e.target.id==='stScope'){statScope=e.target.value;drawStats();}});}
+  {const l0=liveRec();if(l0)statScope='m:'+l0.id;}
   if(!statScope){const l=liveRec();statScope=l?'m:'+l.id:(S.matches&&S.matches[0]&&S.matches[0].event?'ev:'+S.matches[0].event:(S.matches&&S.matches[0]?'m:'+S.matches[0].id:'all'));}
   {const t=document.getElementById('toast');if(t)t.classList.remove('show');}
   sh.hidden=false;document.body.style.overflow='hidden';drawStats();sh.scrollTop=0;}
@@ -956,8 +961,8 @@ function drawStats(){const sh=document.getElementById('statsSheet');if(!sh)retur
     ${runsCard(sel)}
     <div class="sh-card"><h3>By rotation</h3><p>Side-out % is how often you win the point when receiving. On serve is how often you win it on your own serve.${worst&&worst.pm<0?` Rotation ${worst.i} is costing the most points.`:''}</p>
       <div class="tbl"><table><thead><tr><th>Rotation</th><th>Won</th><th>Lost</th><th>+/−</th><th>Side-out</th><th>On serve</th></tr></thead><tbody>${rotRows}</tbody></table></div></div>
-    <div class="sh-card"><h3>Players on the court</h3><p>Points won and lost while each player was on the court. Plus/minus shows the team's net score with them in.</p>
-      <div class="tbl"><table><thead><tr><th>Player</th><th>Points</th><th>Won</th><th>Lost</th><th>+/−</th><th>Win %</th></tr></thead><tbody>${plRows}</tbody></table></div></div>
+    <div class="sh-card"><h3>Players on the court</h3><p>Rallies each player was on the court for, and how the team did in those rallies. A starter who never came off is on the court for every rally, so their numbers match the team totals. These are not points the player scored personally.</p>
+      <div class="tbl"><table><thead><tr><th>Player</th><th>Rallies played</th><th>Team won</th><th>Team lost</th><th>+/−</th><th>Win %</th></tr></thead><tbody>${plRows}</tbody></table></div></div>
     <div class="sh-card"><h3>Serving</h3><p>Points played on each player's serve. Best run is the most points in a row on one turn at serve.</p>
       ${svRows?`<div class="tbl"><table><thead><tr><th>Server</th><th>Serves</th><th>Won</th><th>Win %</th><th>Best run</th></tr></thead><tbody>${svRows}</tbody></table></div>`:'<p>No serving points yet.</p>'}</div>
     <div class="sh-card"><h3>Matches in this view</h3><div class="sh-list">${list}</div></div>
@@ -1000,7 +1005,7 @@ function summaryText(){const sel=scopeRecs(statScope),A=agg(sel);const lines=[`S
   `Sets ${A.setsW}-${A.setsL} · Points ${A.won}-${A.lost}`,'','By rotation (won-lost, side-out %):'];
   for(let i=1;i<=6;i++){const R=A.rot[i];lines.push(`R${i}: ${R.w}-${R.l} (${R.w-R.l>0?'+':''}${R.w-R.l}), side-out ${pct(R.rw,R.rt)}`);}
   {const R=runsOf(sel);if(R.us[0])lines.push('',`Our longest run: ${R.us[0].len} (${runWho(R.us[0])}), ${runWhere(R.us[0])}`);if(R.them[0])lines.push(`Their longest run: ${R.them[0].len} (${runWho(R.them[0])}), ${runWhere(R.them[0])}`);}
-  lines.push('','Plus/minus:');Object.entries(A.pl).map(([n,v])=>[n,v.w-v.l,v.w+v.l]).sort((a,b)=>b[1]-a[1]).forEach(([n,d,t])=>lines.push(`${n}: ${d>0?'+':''}${d} (${t} pts)`));
+  lines.push('','Plus/minus (team score while on the court):');Object.entries(A.pl).map(([n,v])=>[n,v.w-v.l,v.w+v.l]).sort((a,b)=>b[1]-a[1]).forEach(([n,d,t])=>lines.push(`${n}: ${d>0?'+':''}${d} (${t} pts)`));
   return lines.join('\n');}
 async function exportCsv(){const recs=scopeRecs(statScope),csv=csvOf(recs),name=`rotation-stats-${new Date().toISOString().slice(0,10)}.csv`,msg=t=>{const m=document.getElementById('stMsg');if(m)m.textContent=t;};
   try{const P=window.Capacitor&&window.Capacitor.Plugins;
