@@ -21,9 +21,9 @@ The App Store requires a privacy policy URL and a support URL. They're in `docs/
 1. In this repo, go to **Settings → Pages**.
 2. Set **Source** to **Deploy from a branch**, **Branch** to `main`, and folder to `/docs`. Click **Save**.
 3. A minute later, these pages are live:
-   - https://jasonboylan.github.io/rotation-ready/
-   - https://jasonboylan.github.io/rotation-ready/privacy.html
-   - https://jasonboylan.github.io/rotation-ready/support.html
+   - https://jasonboylan.github.io/Rotationready/
+   - https://jasonboylan.github.io/Rotationready/privacy.html
+   - https://jasonboylan.github.io/Rotationready/support.html
 
 ### 2. Join the Apple Developer Program ($99/year)
 

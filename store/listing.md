@@ -42,13 +42,13 @@ MADE FOR THE GYM
 - No accounts, ads or tracking
 
 **Support URL**
-https://jasonboylan.github.io/rotation-ready/support.html
+https://jasonboylan.github.io/Rotationready/support.html
 
 **Marketing URL** (optional)
-https://jasonboylan.github.io/rotation-ready/
+https://jasonboylan.github.io/Rotationready/
 
 **Privacy policy URL**
-https://jasonboylan.github.io/rotation-ready/privacy.html
+https://jasonboylan.github.io/Rotationready/privacy.html
 
 **App Privacy ("nutrition label")**
 Choose "Data Not Collected."
