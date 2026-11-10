@@ -293,6 +293,12 @@ body.focus.matchon .courtscroll{width:min(100%,(100dvh - 312px - env(safe-area-i
 .run-tile small{color:var(--muted)}
 .tbl td:nth-child(3){white-space:normal}
 
+.sh-btn.danger{color:var(--bad);border-color:var(--bad)}
+.sh-btn.danger.solid{background:var(--bad);color:#fff}
+.del-warn{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 8%,var(--surface))}
+.del-warn h3{color:var(--bad)}
+.del-warn p{color:var(--ink)}
+
 </style>
 
 <main class="app">
@@ -889,13 +895,13 @@ function liveRec(){const m=S.match;if(!m||!m.log||!m.log.length||m.saved)return 
   return {id:m.id,date:m.date,opp:m.opp||'',event:m.event||'',sets,log:m.log,live:true};}
 function allRecs(){const r=(S.matches||[]).slice();const l=liveRec();if(l)r.unshift(l);return r;}
 function mLabel(r){const d=new Date(r.date);const ds=isNaN(d)?'':d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
-  const w=r.sets.filter(x=>x[0]>x[1]).length,l=r.sets.filter(x=>x[1]>x[0]).length;
+  const done=r.live?r.sets.slice(0,-1):r.sets,w=done.filter(x=>x[0]>x[1]).length,l=done.filter(x=>x[1]>x[0]).length;
   return `${r.live?'Now: ':''}vs ${r.opp||'Opponent'}${ds?' · '+ds:''} · ${w}–${l}`;}
 function scopeRecs(sc){const all=allRecs();if(!sc||sc==='all')return all;if(sc.startsWith('ev:'))return all.filter(r=>r.event===sc.slice(3));if(sc.startsWith('m:'))return all.filter(r=>r.id===sc.slice(2));return all;}
 function agg(recs){
   const rot={},pl={},sv={};let won=0,lost=0,setsW=0,setsL=0;
   for(let i=1;i<=6;i++)rot[i]={w:0,l:0,rw:0,rt:0,sw:0,st:0};
-  recs.forEach(r=>{r.sets.forEach(x=>{if(x[0]>x[1])setsW++;else if(x[1]>x[0])setsL++;});
+  recs.forEach(r=>{(r.live?r.sets.slice(0,-1):r.sets).forEach(x=>{if(x[0]>x[1])setsW++;else if(x[1]>x[0])setsL++;});
     let run=0,runBy=null;
     r.log.forEach(e=>{const R=rot[e.rot];if(e.won){won++;R.w++;}else{lost++;R.l++;}
       if(e.mode==='receive'){R.rt++;if(e.won)R.rw++;}else{R.st++;if(e.won)R.sw++;}
@@ -906,7 +912,12 @@ function agg(recs){
   return {rot,pl,sv,won,lost,setsW,setsL,n:recs.length};}
 const pct=(a,b)=>b?Math.round(a*100/b)+'%':'–';
 const pm=v=>`<span class="${v>0?'pos':v<0?'neg':''}">${v>0?'+':''}${v}</span>`;
-let statScope=null;
+let statScope=null,delAsk=false;
+function delAllCard(){const n=allRecs().length,pts=allRecs().reduce((a,r)=>a+r.log.length,0);
+  if(!delAsk)return `<div class="sh-card"><h3>Delete stats</h3><p>Remove every saved match and its stats from this device, for example before a new season.</p><div class="row-actions"><button class="sh-btn danger" data-st="delAllAsk">Delete all stats…</button></div></div>`;
+  return `<div class="sh-card del-warn" role="alertdialog" aria-labelledby="delT"><h3 id="delT">Delete all stats?</h3>
+    <p>This permanently deletes ${n} match${n===1?'':'es'} (${pts} points) from this device, including stats for any match in progress. It can't be undone.${n?' Export a spreadsheet first if you want to keep a copy.':''}</p>
+    <div class="row-actions"><button class="sh-btn" data-st="delAllNo">Cancel</button><button class="sh-btn" data-st="csv">Export spreadsheet first</button><button class="sh-btn danger solid" data-st="delAllYes">Delete all stats</button></div></div>`;}
 function openStats(){let sh=document.getElementById('statsSheet');
   if(!sh){sh=document.createElement('section');sh.id='statsSheet';sh.className='sheet';sh.setAttribute('aria-label','Stats');document.body.appendChild(sh);
     sh.addEventListener('click',statsClick);sh.addEventListener('change',e=>{if(e.target.id==='stScope'){statScope=e.target.value;drawStats();}});}
@@ -922,7 +933,7 @@ function drawStats(){const sh=document.getElementById('statsSheet');if(!sh)retur
     .concat(recs.map(r=>`<option value="m:${r.id}"${statScope==='m:'+r.id?' selected':''}>${esc(mLabel(r))}</option>`));
   const head=`<div class="sh-head"><h2>Stats</h2><button class="sh-btn" data-st="close">Done</button></div>
     ${recs.length?`<div class="sh-head"><select id="stScope" aria-label="Which matches">${opts.join('')}</select></div>`:''}`;
-  if(!recs.length){sh.innerHTML=`<div class="sheet-in">${head}<div class="sh-card sh-empty">No points recorded yet.<br>Start <b>Match mode</b> and tap +1 for each point. Stats build up here, match by match.</div></div>`;return;}
+  if(!recs.length){delAsk=false;sh.innerHTML=`<div class="sheet-in">${head}<div class="sh-card sh-empty">No points recorded yet.<br>Start <b>Match mode</b> and tap +1 for each point. Stats build up here, match by match.</div></div>`;return;}
   const sel=scopeRecs(statScope),A=agg(sel),tot=A.won+A.lost;
   const rots=[1,2,3,4,5,6].map(i=>({i,...A.rot[i],pm:A.rot[i].w-A.rot[i].l})),played=rots.filter(r=>r.w+r.l);
   const worst=played.length>1?played.reduce((a,b)=>b.pm<a.pm?b:a):null,best=played.length>1?played.reduce((a,b)=>b.pm>a.pm?b:a):null;
@@ -950,6 +961,7 @@ function drawStats(){const sh=document.getElementById('statsSheet');if(!sh)retur
     <div class="sh-card"><h3>Serving</h3><p>Points played on each player's serve. Best run is the most points in a row on one turn at serve.</p>
       ${svRows?`<div class="tbl"><table><thead><tr><th>Server</th><th>Serves</th><th>Won</th><th>Win %</th><th>Best run</th></tr></thead><tbody>${svRows}</tbody></table></div>`:'<p>No serving points yet.</p>'}</div>
     <div class="sh-card"><h3>Matches in this view</h3><div class="sh-list">${list}</div></div>
+    ${delAllCard()}
   </div>`;}
 
 /* scoring runs: consecutive points by one team within a set */
@@ -1002,7 +1014,10 @@ async function copySummary(){const t=summaryText(),m=document.getElementById('st
   try{await navigator.clipboard.writeText(t);if(m)m.textContent='Summary copied. Paste it into a text or email.';}
   catch(e){if(m)m.textContent='Copy was blocked here. Select the text below and copy it.';const pre=document.createElement('pre');pre.textContent=t;pre.style.whiteSpace='pre-wrap';pre.style.userSelect='text';m.after(pre);}}
 function statsClick(e){const b=e.target.closest('[data-st]');if(!b)return;const a=b.dataset.st;
-  if(a==='close')closeStats();else if(a==='csv')exportCsv();else if(a==='copy')copySummary();
+  if(a==='delAllAsk'){delAsk=true;drawStats();const c=document.querySelector('.del-warn');if(c)c.scrollIntoView({block:'center',behavior:'smooth'});return;}
+  if(a==='delAllNo'){delAsk=false;drawStats();return;}
+  if(a==='delAllYes'){S.matches=[];if(S.match){S.match.log=[];S.match.saved=false;}delAsk=false;statScope='all';save();drawStats();toast('All stats deleted.');return;}
+  if(a==='close'){delAsk=false;closeStats();}else if(a==='csv')exportCsv();else if(a==='copy')copySummary();
   else if(a==='del'){if(!b.dataset.armed){b.dataset.armed='1';b.textContent='Tap to delete';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Delete';}},3000);return;}
     S.matches=(S.matches||[]).filter(r=>r.id!==b.dataset.id);save();drawStats();}}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const sh=document.getElementById('statsSheet');if(sh&&!sh.hidden)closeStats();}});
