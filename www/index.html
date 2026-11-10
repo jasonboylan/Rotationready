@@ -201,6 +201,10 @@ body.focus .focusbar{display:grid;gap:6px;justify-items:center}
 .focusbar .flab{width:auto;text-align:right;padding-right:4px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
 .focusbar .frot button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
 .focusbar .fsep{width:1px;align-self:stretch;background:var(--line);margin-inline:2px}
+body.focus .court{touch-action:none}
+.fsagain{display:none}
+body.focus .fsagain{display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:calc(max(10px,env(safe-area-inset-right,0px)) + 84px);z-index:5;
+  border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-weight:700;min-height:36px;color:var(--brand)}
 body.focus .fsexit{display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:max(10px,env(safe-area-inset-right,0px));z-index:5;
   border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-weight:700;min-height:36px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 
@@ -253,6 +257,7 @@ body.focus .fsexit{display:block;position:absolute;top:calc(env(safe-area-inset-
     <div class="info" id="info"></div>
     <div class="focusbar" id="focusBar"></div>
     <button class="fsexit" id="fsExit" aria-label="Exit full screen">✕ Exit</button>
+    <button class="fsagain" id="fsAgain" hidden aria-label="Hide the browser bars">⤢ Full screen</button>
   </section>
 
   <aside class="panel" id="panel"></aside>
@@ -557,6 +562,7 @@ document.addEventListener('click',e=>{
   else if(b.id==='rotNext'){stopPlay();S.rot=S.rot===6?1:S.rot+1;save();render();}
   else if(b.id==='fsBtn'){enterFocus();}
   else if(b.id==='fsExit'){exitFocus();}
+  else if(b.id==='fsAgain'){goFull();setTimeout(syncFull,400);}
   else if(b.dataset.act==='rotPrev'){stopPlay();S.rot=S.rot===1?6:S.rot-1;save();render();}
   else if(b.dataset.act==='rotNext'){stopPlay();S.rot=S.rot===6?1:S.rot+1;save();render();}
   else if(b.id==='play'||b.dataset.act==='play'){if(playT){stopPlay();render();return;}S.step=1;render();
@@ -599,13 +605,19 @@ document.addEventListener('change',e=>{
   [lu[from],lu[to]]=[lu[to],lu[from]];save();renderPanel();render();
 });
 let wake=null;
+const canFull=()=>{const el=document.documentElement;return !!(el.requestFullscreen||el.webkitRequestFullscreen)&&(document.fullscreenEnabled!==false||document.webkitFullscreenEnabled);};
+const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+function goFull(){try{const el=document.documentElement,rf=el.requestFullscreen||el.webkitRequestFullscreen;if(rf){const r=rf.call(el);if(r&&r.catch)r.catch(()=>{});}}catch(e){}}
+function syncFull(){const b=document.getElementById('fsAgain');if(b)b.hidden=!(document.body.classList.contains('focus')&&canFull()&&!isFull());}
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(syncFull,50)));
 function enterFocus(){document.body.classList.add('focus');scrollTo(0,0);
-  try{const el=document.documentElement,rf=el.requestFullscreen||el.webkitRequestFullscreen;if(rf){const r=rf.call(el);if(r&&r.catch)r.catch(()=>{});}}catch(e){}
+  goFull();setTimeout(syncFull,400);
   try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(w=>wake=w).catch(()=>{});}catch(e){}
   render();}
 function exitFocus(){document.body.classList.remove('focus');
   try{const fe=document.fullscreenElement||document.webkitFullscreenElement,ex=document.exitFullscreen||document.webkitExitFullscreen;if(fe&&ex){const r=ex.call(document);if(r&&r.catch)r.catch(()=>{});}}catch(e){}
   try{if(wake){wake.release();wake=null;}}catch(e){}
+  syncFull();
   render();document.getElementById('fsBtn').focus({preventScroll:false});}
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.body.classList.contains('focus')){exitFocus();return;}
@@ -615,6 +627,9 @@ document.addEventListener('keydown',e=>{
 });
 
 function bindDrag(t){
+  /* stop iPad from treating a player drag as a page swipe (which exits full screen) */
+  const hold=e=>{if(e.cancelable)e.preventDefault();};
+  t.addEventListener('touchstart',hold,{passive:false});t.addEventListener('touchmove',hold,{passive:false});
   t.addEventListener('pointerdown',e=>{stopPlay();e.preventDefault();try{t.setPointerCapture(e.pointerId);}catch(_){}
     drag={id:t.dataset.id,t};t.classList.add('drag');});
   t.addEventListener('pointermove',e=>{if(!drag||drag.t!==t)return;const r=court.getBoundingClientRect();
