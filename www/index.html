@@ -187,7 +187,7 @@ body.focus{overflow:hidden}
 body.focus .board{position:fixed;inset:0;z-index:40;background:var(--bg);margin:0;display:flex;flex-direction:column;justify-content:safe center;align-items:center;gap:8px;overflow-y:auto;
   padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 8px) max(10px,env(safe-area-inset-left,0px))}
 body.focus .zoombar,body.focus #steps,body.focus #info{display:none}
-body.focus .courtscroll{overflow:visible;flex:none;width:min(100%,(100dvh - 150px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * .8)}
+body.focus .courtscroll{overflow:visible;flex:none;width:min(100%,(100dvh - 200px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * .8)}
 body.focus .courtwrap{width:100%}
 body.focus .focusbar{display:grid;gap:6px;justify-items:center}
 .focusbar .fcap{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:.95rem}
@@ -195,6 +195,9 @@ body.focus .focusbar{display:grid;gap:6px;justify-items:center}
 .focusbar button{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-width:42px;min-height:42px;font-weight:700;font-variant-numeric:tabular-nums}
 .focusbar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .focusbar .fplay{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.focusbar .fmode{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.focusbar .fmode button{border:0;min-width:108px;min-height:38px;background:transparent}
+.focusbar .fmode button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
 .focusbar .fsep{width:1px;align-self:stretch;background:var(--line);margin-inline:2px}
 body.focus .fsexit{display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:max(10px,env(safe-area-inset-right,0px));z-index:5;
   border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-weight:700;min-height:36px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
@@ -431,7 +434,8 @@ function render(){
   document.getElementById('steps').innerHTML=STEPS[S.mode].map((t,i)=>`<button class="step" data-step="${i+1}" aria-pressed="${S.step===i+1}"><b>${i+1}</b><span>${t}</span></button>`).join('')+
     `<button class="play" id="play" aria-label="Play all steps">${playT?'■':'▶'}</button>`;
   const fb=document.getElementById('focusBar');
-  if(fb)fb.innerHTML=`<div class="fcap">${S.mode==='serve'?'Serving':'Receiving'} · Rotation ${S.rot} · ${STEPS[S.mode][S.step-1]}</div>
+  if(fb)fb.innerHTML=`<div class="frow fmode" role="group" aria-label="Receiving or serving"><button data-mode="receive" aria-pressed="${S.mode==='receive'}">Receiving</button><button data-mode="serve" aria-pressed="${S.mode==='serve'}">Serving</button></div>
+    <div class="fcap">Rotation ${S.rot} · ${STEPS[S.mode][S.step-1]}</div>
     <div class="frow"><button data-act="rotPrev" aria-label="Previous rotation">‹</button><button data-act="rotNext" aria-label="Next rotation">›</button><span class="fsep"></span>
     ${[1,2,3,4].map(n=>`<button data-step="${n}" aria-pressed="${S.step===n}" aria-label="Step ${n}: ${STEPS[S.mode][n-1]}">${n}</button>`).join('')}
     <button class="fplay" data-act="play" aria-label="Play all steps">${playT?'■':'▶'}</button></div>`;
