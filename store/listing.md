@@ -15,7 +15,7 @@ Primary: Sports. Secondary: Education (optional).
 See all six rotations before the first serve. Step through serve receive, attack and defense, and catch overlap calls before the referee does.
 
 **Keywords** [100, comma separated, no spaces needed]
-volleyball,rotation,lineup,coach,5-1,6-2,4-2,overlap,serve receive,libero,setter,club,youth
+volleyball,rotation,lineup,coach,5-1,6-2,4-2,overlap,serve receive,libero,setter,score,subs
 
 **Description** [4000]
 Rotation Ready shows your volleyball lineup in all six rotations, so you and your players know exactly where to stand.
@@ -25,6 +25,9 @@ Switch between 5-1, 6-2, 4-2 and 6-6. Each system keeps its own lineup.
 
 WALK THROUGH THE RALLY
 Step through base positions, serve receive or the serve, the attack or switch, and defense. Arrows show who moves where, and the play button animates the whole sequence.
+
+RUN THE MATCH
+Turn on Match mode and tap +1 for each point. Rotation Ready keeps score, rotates your team when you win the serve back, shows who's serving, counts your subs against the set limit, and tells you when the libero goes in or out. Undo any point with one tap.
 
 CATCH OVERLAPS
 Drag any player to try your own formation. Rotation Ready checks rotational order the moment you let go and names the players who would be called for overlap.
