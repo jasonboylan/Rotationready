@@ -103,7 +103,7 @@ h1{font-family:var(--display);font-weight:700;font-size:1.6rem;letter-spacing:.0
 .court svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .c-free{fill:var(--free)} .c-court{fill:var(--court)} .c-sheen{display:none}
 .court.wood{--court-line:var(--wood-line,#20323a);--arrow:rgba(25,30,32,.72)}
-.court.wood .c-court{fill:url(#woodCourt)} .court.wood .c-free{fill:url(#woodFree)} .court.wood .c-sheen{display:inline}
+.court.wood .c-court{fill:url(#woodCourt)} .court.wood .c-free{fill:url(#woodCourt)} .court.wood .c-sheen{display:inline}
 .court.wood .c-zone{opacity:.14}
 .court.wood .c-txt{fill:var(--court-line);opacity:.9}
 .court.wood .nm{color:#1d1a16;text-shadow:0 1px 0 rgba(255,255,255,.55)} .c-line{stroke:var(--court-line);fill:none}
@@ -594,7 +594,7 @@ function buildWood(){
         const gx=x+W*(.25+rnd()*.5);out+=`<line x1="${gx.toFixed(3)}" y1="${(y+.05).toFixed(3)}" x2="${(gx+(rnd()-.5)*.05).toFixed(3)}" y2="${(y+len-.05).toFixed(3)}" stroke="rgba(120,70,25,${(.08+rnd()*.1).toFixed(2)})" stroke-width=".01"/>`;
         y+=len;}}
     p.innerHTML=out;defs.appendChild(p);}
-  pat('woodCourt',34,58,74,9);pat('woodFree',26,52,47,10);
+  pat('woodCourt',34,58,74,9);
 }
 function applyTeam(){
   const t=team(),st=document.documentElement.style,custom=t.primary!==DEF_TEAM.primary||t.accent!==DEF_TEAM.accent;
