@@ -1,6 +1,6 @@
 // Offline support. The page itself is loaded from the network first, so phones
 // get the newest version whenever they're online; the saved copy is used offline.
-const VERSION = "rotation-ready-v15";
+const VERSION = "rotation-ready-v16";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

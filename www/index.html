@@ -205,6 +205,7 @@ body.focus .court{touch-action:none}
 .fsagain{display:none}
 body.focus .fsagain{display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:calc(max(10px,env(safe-area-inset-right,0px)) + 84px);z-index:5;
   border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-weight:700;min-height:36px;color:var(--brand)}
+body.focus.nativefs .fsexit{display:none!important}
 body.focus .fsexit{display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:max(10px,env(safe-area-inset-right,0px));z-index:5;
   border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-weight:700;min-height:36px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 
@@ -705,13 +706,17 @@ let wake=null;
 const canFull=()=>{const el=document.documentElement;return !!(el.requestFullscreen||el.webkitRequestFullscreen)&&(document.fullscreenEnabled!==false||document.webkitFullscreenEnabled);};
 const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
 function goFull(){try{const el=document.documentElement,rf=el.requestFullscreen||el.webkitRequestFullscreen;if(rf){const r=rf.call(el);if(r&&r.catch)r.catch(()=>{});}}catch(e){}}
-function syncFull(){const b=document.getElementById('fsAgain');if(b)b.hidden=!(document.body.classList.contains('focus')&&canFull()&&!isFull());}
-['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(syncFull,50)));
+let wasNative=false;
+function syncFull(){const b=document.getElementById('fsAgain');if(b)b.hidden=true;document.body.classList.toggle('nativefs',isFull());}
+/* when the browser's own full-screen close button is used, leave the court view too, so there is only one way out */
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{const full=isFull();
+  if(full)wasNative=true;else if(wasNative&&document.body.classList.contains('focus')){wasNative=false;exitFocus();}
+  syncFull();}));
 function enterFocus(){document.body.classList.add('focus');scrollTo(0,0);
   goFull();setTimeout(syncFull,400);
   try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(w=>wake=w).catch(()=>{});}catch(e){}
   render();}
-function exitFocus(){document.body.classList.remove('focus');
+function exitFocus(){wasNative=false;document.body.classList.remove('focus');
   try{const fe=document.fullscreenElement||document.webkitFullscreenElement,ex=document.exitFullscreen||document.webkitExitFullscreen;if(fe&&ex){const r=ex.call(document);if(r&&r.catch)r.catch(()=>{});}}catch(e){}
   try{if(wake){wake.release();wake=null;}}catch(e){}
   syncFull();
