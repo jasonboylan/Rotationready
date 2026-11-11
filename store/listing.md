@@ -30,7 +30,7 @@ RUN THE MATCH
 Turn on Match mode and tap +1 for each point. Rotation Ready keeps score, rotates your team when you win the serve back, shows who's serving, counts your subs against the set limit, and tells you when the libero goes in or out. Undo any point with one tap.
 
 LOOK BACK AT EVERY MATCH
-Every point in Match mode is saved with the rotation and the players on the court. See which rotations win and lose points, side-out and serving percentages, each player's plus/minus, and serving runs, for one match or a whole tournament. Export a spreadsheet or copy a summary to share with your staff.
+Every point in Match mode is saved with the rotation and the players on the court. See which rotations win and lose points, side-out and serving percentages, each player's plus/minus, and serving runs, for one match, one opponent or a whole tournament, with your tournament record and results. Export a spreadsheet or copy a summary to share with your staff.
 
 CATCH OVERLAPS
 Drag any player to try your own formation. Rotation Ready checks rotational order the moment you let go and names the players who would be called for overlap.

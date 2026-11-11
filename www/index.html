@@ -308,6 +308,16 @@ body.focus.matchon .courtscroll{width:min(100%,(100dvh - 312px - env(safe-area-i
 .opp-runs td:nth-child(2) b{color:var(--ok)}.opp-runs td:nth-child(3) b{color:var(--bad)}
 .opp-runs th:nth-child(n+2),.opp-runs td:nth-child(n+2){text-align:left}
 
+.rec-big{display:flex;gap:10px;flex-wrap:wrap}
+.rec-big div{background:var(--bg);border-radius:10px;padding:10px 16px;min-width:120px}
+.rec-big b{display:block;font-family:var(--display);font-size:2.2rem;line-height:1;font-variant-numeric:tabular-nums}
+.rec-big span{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.res{display:inline-block;min-width:26px;text-align:center;border-radius:6px;padding:1px 6px;font-weight:800;background:var(--bg)}
+.res.w{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}.res.l{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+.rec-card td:nth-child(n+3),.rec-card th:nth-child(n+3){text-align:left}
+.sh-link{border:0;background:none;padding:0;font-weight:700;color:var(--brand);text-align:left;min-height:32px;text-decoration:underline;text-underline-offset:3px}
+.sh-mini{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:3px 10px;min-height:32px;font-weight:700;color:var(--brand)}
+
 </style>
 
 <main class="app">
@@ -914,7 +924,8 @@ function allRecs(){const r=(S.matches||[]).slice();const l=liveRec();if(l)r.unsh
 function mLabel(r){const d=new Date(r.date);const ds=isNaN(d)?'':d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
   const done=doneSets(r),w=done.filter(x=>x[0]>x[1]).length,l=done.filter(x=>x[1]>x[0]).length;
   return `${r.live?'Now: ':''}vs ${r.opp||'Opponent'}${ds?' · '+ds:''} · ${w}–${l}`;}
-function scopeRecs(sc){const all=allRecs();if(!sc||sc==='all')return all;if(sc.startsWith('ev:'))return all.filter(r=>r.event===sc.slice(3));if(sc.startsWith('m:'))return all.filter(r=>r.id===sc.slice(2));return all;}
+const oppOf=r=>((r.opp||'').trim()||'Opponent');
+function scopeRecs(sc){const all=allRecs();if(!sc||sc==='all')return all;if(sc.startsWith('opp:'))return all.filter(r=>oppOf(r)===sc.slice(4));if(sc.startsWith('ev:'))return all.filter(r=>r.event===sc.slice(3));if(sc.startsWith('m:'))return all.filter(r=>r.id===sc.slice(2));return all;}
 function agg(recs){
   const rot={},pl={},sv={};let won=0,lost=0,setsW=0,setsL=0;
   for(let i=1;i<=6;i++)rot[i]={w:0,l:0,rw:0,rt:0,sw:0,st:0};
@@ -946,9 +957,11 @@ function closeStats(){const sh=document.getElementById('statsSheet');if(sh)sh.hi
 function drawStats(){const sh=document.getElementById('statsSheet');if(!sh)return;
   const recs=allRecs(),evs=[...new Set(recs.map(r=>r.event).filter(Boolean))];
   if(statScope&&statScope!=='all'&&!scopeRecs(statScope).length)statScope='all';
-  const opts=[`<option value="all"${statScope==='all'?' selected':''}>All matches (${recs.length})</option>`]
-    .concat(evs.map(e=>{const n=recs.filter(r=>r.event===e).length;return `<option value="ev:${esc(e)}"${statScope==='ev:'+e?' selected':''}>${esc(e)} (${n} match${n===1?'':'es'})</option>`;}))
-    .concat(recs.map(r=>`<option value="m:${r.id}"${statScope==='m:'+r.id?' selected':''}>${esc(mLabel(r))}</option>`));
+  const opps=[...new Set(recs.map(oppOf))],o=(v,t)=>`<option value="${esc(v)}"${statScope===v?' selected':''}>${esc(t)}</option>`,ct=n=>`${n} match${n===1?'':'es'}`;
+  const opts=[o('all',`All matches (${recs.length})`)]
+    .concat(evs.length?[`<optgroup label="Tournaments and events">`+evs.map(e=>o('ev:'+e,`${e} (${ct(recs.filter(r=>r.event===e).length)})`)).join('')+`</optgroup>`]:[])
+    .concat([`<optgroup label="Teams played">`+opps.map(t=>o('opp:'+t,`vs ${t} (${ct(recs.filter(r=>oppOf(r)===t).length)})`)).join('')+`</optgroup>`])
+    .concat([`<optgroup label="Single matches">`+recs.map(r=>o('m:'+r.id,mLabel(r))).join('')+`</optgroup>`]);
   const head=`<div class="sh-head"><h2>Stats</h2><button class="sh-btn" data-st="close">Done</button></div>
     ${recs.length?`<div class="sh-head"><select id="stScope" aria-label="Which matches">${opts.join('')}</select></div>`:''}`;
   if(!recs.length){delAsk=false;sh.innerHTML=`<div class="sheet-in">${head}<div class="sh-card sh-empty">No points recorded yet.<br>Start <b>Match mode</b> and tap +1 for each point. Stats build up here, match by match.</div></div>`;return;}
@@ -964,13 +977,15 @@ function drawStats(){const sh=document.getElementById('statsSheet');if(!sh)retur
   const recRx=A.setsW+A.setsL?`${A.setsW}–${A.setsL}`:'–';
   const list=sel.map(r=>`<div class="it"><span>${esc(mLabel(r))}<br><small>${esc(r.event||'No event')} · sets ${r.sets.map(x=>x.join('–')).join(', ')||'–'}</small></span>${r.live?'':`<button data-st="del" data-id="${r.id}">Delete</button>`}</div>`).join('');
   sh.innerHTML=`<div class="sheet-in">${head}
+    ${recordCard(sel)}
     <div class="sh-card"><div class="sh-sum">
-      <div><span>Matches</span><b>${A.n}</b></div><div><span>Sets won–lost</span><b>${recRx}</b></div>
+      ${statScope.startsWith('m:')?`<div><span>Sets won–lost</span><b>${recRx}</b></div>`:''}
       <div><span>Points won</span><b>${A.won}</b></div><div><span>Points lost</span><b>${A.lost}</b></div>
       <div><span>Side-out</span><b>${pct(rots.reduce((a,r)=>a+r.rw,0),rots.reduce((a,r)=>a+r.rt,0))}</b></div>
       <div><span>Point-scoring</span><b>${pct(rots.reduce((a,r)=>a+r.sw,0),rots.reduce((a,r)=>a+r.st,0))}</b></div></div>
       <div class="row-actions"><button class="sh-btn primary" data-st="csv">Export spreadsheet</button><button class="sh-btn" data-st="copy">Copy summary</button></div>
       <p id="stMsg" aria-live="polite"></p></div>
+    ${oppCard(sel)}
     ${runsCard(sel)}
     <div class="sh-card"><h3>By rotation</h3><p>Side-out % is how often you win the point when receiving. On serve is how often you win it on your own serve.${worst&&worst.pm<0?` Rotation ${worst.i} is costing the most points.`:''}</p>
       <div class="tbl"><table><thead><tr><th>Rotation</th><th>Won</th><th>Lost</th><th>+/−</th><th>Side-out</th><th>On serve</th></tr></thead><tbody>${rotRows}</tbody></table></div></div>
@@ -1015,13 +1030,38 @@ function runsCard(recs){const R=runsOf(recs);
     ${R.us.length>1||R.them.length>1?`<div class="tbl"><table><thead><tr><th>Ours</th><th>Who served</th><th>When</th></tr></thead><tbody>${list(R.us)||'<tr><td colspan="3">–</td></tr>'}</tbody></table></div>
     <div class="tbl"><table><thead><tr><th>Theirs</th><th>Our rotation</th><th>When</th></tr></thead><tbody>${list(R.them)||'<tr><td colspan="3">–</td></tr>'}</tbody></table></div>`:''}</div>`;}
 
+
+function mResult(r){const d=doneSets(r),w=d.filter(x=>x[0]>x[1]).length,l=d.filter(x=>x[1]>x[0]).length;return {w,l,res:r.live&&w<2&&l<2?'Live':w>l?'W':l>w?'L':'–',sets:r.sets};}
+function scopeTitle(){return statScope==='all'?'Overall record':statScope.startsWith('ev:')?statScope.slice(3):statScope.startsWith('opp:')?'Record vs '+statScope.slice(4):'';}
+function recordCard(sel){if(statScope.startsWith('m:'))return '';
+  const rs=sel.map(r=>({r,...mResult(r)})),mw=rs.filter(x=>x.res==='W').length,ml=rs.filter(x=>x.res==='L').length;
+  const sw=rs.reduce((a,x)=>a+x.w,0),sl=rs.reduce((a,x)=>a+x.l,0);
+  const rows=rs.slice().sort((a,b)=>String(a.r.date).localeCompare(String(b.r.date))).map(x=>{const d=new Date(x.r.date);
+    return `<tr><td>${isNaN(d)?'':d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</td><td>${esc(oppOf(x.r))}</td><td><span class="res ${x.res==='W'?'w':x.res==='L'?'l':''}">${x.res}</span></td><td>${x.sets.map(s=>s.join('–')).join(', ')||'–'}</td></tr>`;}).join('');
+  return `<div class="sh-card rec-card"><h3>${esc(scopeTitle())}</h3>
+    <div class="rec-big"><div><b>${mw}–${ml}</b><span>Matches</span></div><div><b>${sw}–${sl}</b><span>Sets</span></div></div>
+    <div class="tbl"><table><thead><tr><th>Date</th><th>Opponent</th><th>Result</th><th>Sets</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;}
+function oppCard(sel){const opps=[...new Set(sel.map(oppOf))];if(opps.length<2)return '';
+  const rows=opps.map(t=>{const rs=sel.filter(r=>oppOf(r)===t),A=agg(rs),res=rs.map(mResult);
+    const mw=res.filter(x=>x.res==='W').length,ml=res.filter(x=>x.res==='L').length,sw=res.reduce((a,x)=>a+x.w,0),sl=res.reduce((a,x)=>a+x.l,0);
+    const rot=[1,2,3,4,5,6].map(i=>({i,pm:A.rot[i].w-A.rot[i].l,n:A.rot[i].w+A.rot[i].l})).filter(x=>x.n);
+    const worst=rot.length?rot.reduce((a,b)=>b.pm<a.pm?b:a):null;
+    const pl=Object.entries(A.pl).map(([n,v])=>[n,v.w-v.l]).sort((a,b)=>b[1]-a[1])[0];
+    const so=[1,2,3,4,5,6].reduce((a,i)=>[a[0]+A.rot[i].rw,a[1]+A.rot[i].rt],[0,0]),sv=[1,2,3,4,5,6].reduce((a,i)=>[a[0]+A.rot[i].sw,a[1]+A.rot[i].st],[0,0]);
+    return {t,mw,ml,sw,sl,won:A.won,lost:A.lost,so,sv,worst,pl};});
+  rows.sort((a,b)=>(b.mw-b.ml)-(a.mw-a.ml)||(b.won-b.lost)-(a.won-a.lost));
+  return `<div class="sh-card"><h3>By team played</h3><p>Tap a team to see every stat on this page for just that opponent. Swipe the table sideways for more columns.</p>
+    <div class="tbl"><table><thead><tr><th>Opponent</th><th>Matches</th><th>Sets</th><th>Points</th><th>Side-out</th><th>On serve</th><th>Worst rotation</th><th>Best +/−</th></tr></thead><tbody>
+    ${rows.map(x=>`<tr><td><button class="sh-link" data-st="viewOpp" data-opp="${esc(x.t)}">${esc(x.t)} ›</button></td><td>${x.mw}–${x.ml}</td><td>${x.sw}–${x.sl}</td><td>${x.won}–${x.lost}</td><td>${pct(x.so[0],x.so[1])}</td><td>${pct(x.sv[0],x.sv[1])}</td><td>${x.worst&&x.worst.pm<0?`R${x.worst.i} ${pm(x.worst.pm)}`:'–'}</td><td>${x.pl&&x.pl[1]>0?`${esc(x.pl[0])} ${pm(x.pl[1])}`:'–'}</td></tr>`).join('')}</tbody></table></div></div>`;}
+
 function csvOf(recs){const q=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
   const rows=[['Date','Event','Opponent','Set','Point','Score (us-them)','Result','Rotation','Phase','Server','On court']];
   recs.forEach(r=>{const sc={};r.log.forEach((e,i)=>{const k=e.set;sc[k]=sc[k]||[0,0];if(e.won)sc[k][0]++;else sc[k][1]++;
     rows.push([(r.date||'').slice(0,10),r.event,r.opp,e.set,i+1,sc[k].join('-'),e.won?'Won':'Lost',e.rot,e.mode==='serve'?'Serving':'Receiving',e.srv||'',e.on.join('; ')]);});});
   return rows.map(x=>x.map(q).join(',')).join('\n');}
-function summaryText(){const sel=scopeRecs(statScope),A=agg(sel);const lines=[`Stats: ${statScope==='all'?'All matches':statScope.startsWith('ev:')?statScope.slice(3):mLabel(sel[0]||{sets:[],date:''})}`,
-  `Sets ${A.setsW}-${A.setsL} · Points ${A.won}-${A.lost}`,'','By rotation (won-lost, side-out %):'];
+function summaryText(){const sel=scopeRecs(statScope),A=agg(sel);const res=sel.map(mResult);const lines=[`Stats: ${statScope.startsWith('m:')?mLabel(sel[0]||{sets:[],date:''}):scopeTitle()}`,
+  `Matches ${res.filter(x=>x.res==='W').length}-${res.filter(x=>x.res==='L').length} · Sets ${A.setsW}-${A.setsL} · Points ${A.won}-${A.lost}`,
+  ...(statScope.startsWith('m:')?[]:['','Results:',...sel.map(r=>{const x=mResult(r);return `${x.res} vs ${oppOf(r)} (${r.sets.map(s=>s.join('-')).join(', ')})`;})]),'','By rotation (won-lost, side-out %):'];
   for(let i=1;i<=6;i++){const R=A.rot[i];lines.push(`R${i}: ${R.w}-${R.l} (${R.w-R.l>0?'+':''}${R.w-R.l}), side-out ${pct(R.rw,R.rt)}`);}
   {const g={};sel.forEach(r=>{const k=r.opp||'Opponent';(g[k]=g[k]||[]).push(r);});if(Object.keys(g).length>1){lines.push('','Longest runs by opponent (ours / theirs):');Object.entries(g).forEach(([o,rs])=>{const R=runsOf(rs);lines.push(`${o}: ${R.us[0]?R.us[0].len:0} / ${R.them[0]?R.them[0].len:0}`);});}}
   {const R=runsOf(sel);if(R.us[0])lines.push('',`Our longest run: ${R.us[0].len} (${runWho(R.us[0])}), ${runWhere(R.us[0])}`);if(R.them[0])lines.push(`Their longest run: ${R.them[0].len} (${runWho(R.them[0])}), ${runWhere(R.them[0])}`);}
@@ -1041,6 +1081,7 @@ async function copySummary(){const t=summaryText(),m=document.getElementById('st
 function statsClick(e){const b=e.target.closest('[data-st]');if(!b)return;const a=b.dataset.st;
   if(a==='delAllAsk'){delAsk=true;drawStats();const c=document.querySelector('.del-warn');if(c)c.scrollIntoView({block:'center',behavior:'smooth'});return;}
   if(a==='delAllNo'){delAsk=false;drawStats();return;}
+  if(a==='viewOpp'){statScope='opp:'+b.dataset.opp;drawStats();document.getElementById('statsSheet').scrollTop=0;return;}
   if(a==='delAllYes'){S.matches=[];if(S.match){S.match.log=[];S.match.saved=false;}delAsk=false;statScope='all';save();drawStats();toast('All stats deleted.');return;}
   if(a==='close'){delAsk=false;closeStats();}else if(a==='csv')exportCsv();else if(a==='copy')copySummary();
   else if(a==='del'){if(!b.dataset.armed){b.dataset.armed='1';b.textContent='Tap to delete';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Delete';}},3000);return;}
