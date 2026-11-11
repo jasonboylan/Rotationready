@@ -300,6 +300,14 @@ body.focus.matchon .courtscroll{width:min(100%,(100dvh - 312px - env(safe-area-i
 .del-warn h3{color:var(--bad)}
 .del-warn p{color:var(--ink)}
 
+.sh-sub{margin:4px 0 0;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.opp-runs td{white-space:normal;vertical-align:top}
+.tbl.opp-runs small{display:inline;color:var(--muted)}
+.tbl.opp-runs td:nth-child(n+2) small{display:block}
+.opp-runs td b{font-family:var(--display);font-size:1.15rem}
+.opp-runs td:nth-child(2) b{color:var(--ok)}.opp-runs td:nth-child(3) b{color:var(--bad)}
+.opp-runs th:nth-child(n+2),.opp-runs td:nth-child(n+2){text-align:left}
+
 </style>
 
 <main class="app">
@@ -992,12 +1000,18 @@ function runsOf(recs){const out=[];
 function runWhere(x){return `vs ${x.opp}, set ${x.set} (${x.from.join('–')} to ${x.to.join('–')})`;}
 function runWho(x){if(x.side==='us')return x.topSrv?`${x.topSrvN} on ${x.topSrv}'s serve`:'';
   return x.rotList.length?`while we were in rotation ${x.rotList.join(' and ')}`:'';}
+function runsByOpp(recs){const g={};recs.forEach(r=>{const k=(r.opp||'Opponent').trim()||'Opponent';(g[k]=g[k]||[]).push(r);});
+  const rows=Object.entries(g).map(([opp,rs])=>{const R=runsOf(rs);return {opp,n:rs.length,us:R.us[0],them:R.them[0]};});
+  rows.sort((a,b)=>((b.us?b.us.len:0)-(b.them?b.them.len:0))-((a.us?a.us.len:0)-(a.them?a.them.len:0)));
+  const cell=(x,side)=>x?`<b>${x.len}</b> <small>${esc(side==='us'?(x.topSrv?x.topSrv+(x.topSrvN?' ('+x.topSrvN+' on serve)':''):''):(x.rotList.length?'in rotation '+x.rotList.join(', '):''))} · set ${x.set}</small>`:'–';
+  return `<div class="tbl opp-runs"><table><thead><tr><th>Opponent</th><th>Our best run</th><th>Their best run</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.opp)}${r.n>1?` <small>(${r.n} matches)</small>`:''}</td><td>${cell(r.us,'us')}</td><td>${cell(r.them,'them')}</td></tr>`).join('')}</tbody></table></div>`;}
 function runsCard(recs){const R=runsOf(recs);
   const tile=(x,label)=>x?`<div class="run-tile ${x.side}"><span>${label}</span><b>${x.len} points</b><em>${esc(runWho(x))}</em><small>${esc(runWhere(x))}</small></div>`
     :`<div class="run-tile"><span>${label}</span><b>–</b><small>No runs of 2 or more yet.</small></div>`;
   const list=(arr)=>arr.slice(0,5).map(x=>`<tr><td>${x.len}</td><td>${esc(runWho(x)||'–')}</td><td>${esc(runWhere(x))}</td></tr>`).join('');
   return `<div class="sh-card"><h3>Scoring runs</h3><p>Points in a row by one team in the same set. Our runs show who was serving; theirs show the rotation we were stuck in.</p>
     <div class="run-tiles">${tile(R.us[0],'Our longest run')}${tile(R.them[0],'Their longest run')}</div>
+    <h4 class="sh-sub">By opponent</h4>${runsByOpp(recs)}
     ${R.us.length>1||R.them.length>1?`<div class="tbl"><table><thead><tr><th>Ours</th><th>Who served</th><th>When</th></tr></thead><tbody>${list(R.us)||'<tr><td colspan="3">–</td></tr>'}</tbody></table></div>
     <div class="tbl"><table><thead><tr><th>Theirs</th><th>Our rotation</th><th>When</th></tr></thead><tbody>${list(R.them)||'<tr><td colspan="3">–</td></tr>'}</tbody></table></div>`:''}</div>`;}
 
@@ -1009,6 +1023,7 @@ function csvOf(recs){const q=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?
 function summaryText(){const sel=scopeRecs(statScope),A=agg(sel);const lines=[`Stats: ${statScope==='all'?'All matches':statScope.startsWith('ev:')?statScope.slice(3):mLabel(sel[0]||{sets:[],date:''})}`,
   `Sets ${A.setsW}-${A.setsL} · Points ${A.won}-${A.lost}`,'','By rotation (won-lost, side-out %):'];
   for(let i=1;i<=6;i++){const R=A.rot[i];lines.push(`R${i}: ${R.w}-${R.l} (${R.w-R.l>0?'+':''}${R.w-R.l}), side-out ${pct(R.rw,R.rt)}`);}
+  {const g={};sel.forEach(r=>{const k=r.opp||'Opponent';(g[k]=g[k]||[]).push(r);});if(Object.keys(g).length>1){lines.push('','Longest runs by opponent (ours / theirs):');Object.entries(g).forEach(([o,rs])=>{const R=runsOf(rs);lines.push(`${o}: ${R.us[0]?R.us[0].len:0} / ${R.them[0]?R.them[0].len:0}`);});}}
   {const R=runsOf(sel);if(R.us[0])lines.push('',`Our longest run: ${R.us[0].len} (${runWho(R.us[0])}), ${runWhere(R.us[0])}`);if(R.them[0])lines.push(`Their longest run: ${R.them[0].len} (${runWho(R.them[0])}), ${runWhere(R.them[0])}`);}
   lines.push('','Plus/minus (team score while on the court):');Object.entries(A.pl).map(([n,v])=>[n,v.w-v.l,v.w+v.l]).sort((a,b)=>b[1]-a[1]).forEach(([n,d,t])=>lines.push(`${n}: ${d>0?'+':''}${d} (${t} pts)`));
   return lines.join('\n');}
