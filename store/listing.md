@@ -21,7 +21,7 @@ volleyball,rotation,lineup,coach,5-1,6-2,4-2,overlap,serve receive,libero,setter
 Rotation Ready shows your volleyball lineup in all six rotations, so you and your players know exactly where to stand.
 
 CHOOSE YOUR SYSTEM
-Switch between 5-1, 6-2, 4-2 and 6-6. Each system keeps its own lineup.
+Switch between 5-1, 5-2, 6-2 and 4-2. Each system keeps its own lineup. In a 5-2, two setters share one setter spot and you choose the rotations each one covers.
 
 WALK THROUGH THE RALLY
 Step through base positions, serve receive or the serve, the attack or switch, and defense. Arrows show who moves where, and the play button animates the whole sequence.

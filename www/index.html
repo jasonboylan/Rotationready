@@ -318,6 +318,12 @@ body.focus.matchon .courtscroll{width:min(100%,(100dvh - 312px - env(safe-area-i
 .sh-link{border:0;background:none;padding:0;font-weight:700;color:var(--brand);text-align:left;min-height:32px;text-decoration:underline;text-underline-offset:3px}
 .sh-mini{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:3px 10px;min-height:32px;font-weight:700;color:var(--brand)}
 
+.shares{font-size:.7rem;color:var(--muted);font-weight:700;line-height:1.1;max-width:74px}
+.s2pick{display:grid;gap:6px;padding:8px;border-radius:10px;background:var(--bg)}
+.s2rots{display:flex;gap:6px;flex-wrap:wrap}
+.s2rots button{min-width:40px;min-height:38px;border:1px solid var(--line);background:var(--surface);border-radius:8px;font-weight:800;font-variant-numeric:tabular-nums}
+.s2rots button[aria-pressed="true"]{background:var(--r-s);border-color:var(--r-s);color:#1b1404}
+
 </style>
 
 <main class="app">
@@ -412,10 +418,10 @@ const twoSet=[['S1','S','Setter 1'],['OH1','OH','Outside 1'],['MB1','MB','Middle
 const SYS={
  '5-1':{lib:true,blurb:'One setter runs the offense in all six rotations. With the setter in the back row there are three front-row attackers; with the setter in front there are two.',
    players:[['S','S','Setter'],['OH1','OH','Outside 1'],['MB1','MB','Middle 1'],['OPP','OPP','Opposite'],['OH2','OH','Outside 2'],['MB2','MB','Middle 2']]},
+ '5-2':{lib:true,shared:true,blurb:'Five attackers and two setters who share one setter spot in the lineup. They take turns: choose the rotations Setter 2 covers, and Setter 1 sets the rest. Court positions work like a 5-1.',
+   players:[['S','S','Setter 1'],['OH1','OH','Outside 1'],['MB1','MB','Middle 1'],['OPP','OPP','Opposite'],['OH2','OH','Outside 2'],['MB2','MB','Middle 2']],extra:[['S2','S','Setter 2']]},
  '6-2':{lib:true,blurb:'Two setters line up opposite each other. The back-row setter sets and the front-row setter hits right side, so there are always three front-row attackers.',players:twoSet},
  '4-2':{lib:true,blurb:'Two setters line up opposite each other. The front-row setter sets from right front, leaving two front-row attackers. Common with younger teams.',players:twoSet},
- '6-6':{lib:false,blurb:'No specialists. Everyone plays every spot, and whoever rotates into zone 3 (middle front) sets. Serve receive uses a five-passer W.',
-   players:[1,2,3,4,5,6].map(n=>['P'+n,'P','Player '+n])}
 };
 const FULL={S:'setter',OH:'outside',MB:'middle',OPP:'opposite',L:'libero',P:'player'};
 const SLOTNAME={LF:'left front',MF:'middle front',RF:'right front',LB:'left back',MBK:'middle back',RB:'right back'};
@@ -429,25 +435,29 @@ const DEF_LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXP
 const DEF_TEAM={name:'',primary:'#15464d',accent:'#e0603a',surface:'wood',logo:''};
 const tick=()=>{try{const h=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Haptics;if(h)h.impact({style:'LIGHT'});}catch(e){}};
 
-function fresh(){const d={};for(const k in SYS)d[k]={lineup:SYS[k].players.map(p=>p[0]),names:{}};
+function fresh(){const d={};for(const k in SYS)d[k]=Object.assign({lineup:SYS[k].players.map(p=>p[0]),names:{}},SYS[k].shared?{s2rots:[4,5,6]}:{});
   return {sys:'5-1',libero:true,mode:'receive',rot:1,step:2,data:d,ov:{}};}
 let S=fresh();
-try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);if(o&&o.data&&SYS[o.sys])S=Object.assign(fresh(),o);}}catch(e){}
+try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);if(o&&o.data){if(!SYS[o.sys])o.sys='5-1';const fd=fresh().data;for(const k in fd)if(!o.data[k])o.data[k]=fd[k];delete o.data['6-6'];S=Object.assign(fresh(),o);}}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 
 function info(sys,id){
   const num=(S.data[sys].nums||{})[id]||'';
   if(id==='L')return{id:'L',role:'L',label:'L',def:'Libero',name:S.data[sys].names.L||'Libero',num};
-  const p=SYS[sys].players.find(x=>x[0]===id);
+  const p=SYS[sys].players.find(x=>x[0]===id)||(SYS[sys].extra||[]).find(x=>x[0]===id);
   return{id,role:p[1],label:p[0],def:p[2],name:S.data[sys].names[id]||p[2],num};
 }
+function s2Rots(){const d=S.data[S.sys];return Array.isArray(d.s2rots)?d.s2rots:[4,5,6];}
+function s2On(){return !!SYS[S.sys].shared&&s2Rots().includes(S.rot);}
 const rotZ=(z,k)=>{for(let i=0;i<k;i++)z=z===1?6:z-1;return z;};
 
 function lineup(){
   const s=S.sys,def=SYS[s];
   let ps=S.data[s].lineup.map((id,i)=>Object.assign(info(s,id),{zone:rotZ(i+1,S.rot-1)}));
+  /* 5-2: Setter 2 takes the shared setter spot in the rotations the coach picked */
+  if(def.shared&&s2On())ps=ps.map(p=>p.id==='S'?Object.assign(info(s,'S2'),{zone:p.zone}):p);
   const setters=ps.filter(p=>p.role==='S');let setter;
-  if(s==='5-1')setter=setters[0];
+  if(s==='5-1'||s==='5-2')setter=setters[0];
   else if(s==='6-2')setter=setters.find(p=>!isFront(p.zone))||setters[0];
   else if(s==='4-2')setter=setters.find(p=>isFront(p.zone))||setters[0];
   else setter=ps.find(p=>p.zone===3);
@@ -601,7 +611,7 @@ function renderInfo(c,pos){
   const set=c.setter;let p='',chip='',viol=[];
   const setterRow=set?(isFront(set.zone)?'front row':'back row'):'';
   if(st===1){
-    p=`Rotation ${S.rot} in rotational order. ${set?`${nm(set)} sets from the ${setterRow} (zone ${set.zone}). `:''}Each time the team wins back the serve, everyone moves one zone clockwise.`;
+    p=`Rotation ${S.rot} in rotational order. ${SYS[S.sys].shared?(s2On()?`${nm(info(S.sys,'S2'))} (Setter 2) is in the setter spot this rotation. `:`${nm(info(S.sys,'S'))} (Setter 1) is in the setter spot this rotation. `):''}${set?`${nm(set)} sets from the ${setterRow} (zone ${set.zone}). `:''}Each time the team wins back the serve, everyone moves one zone clockwise.`;
     if(c.liberoFor)p+=` ${esc(c.ps.find(x=>x.role==='L').name)} is in for ${esc(c.liberoFor.name)}.`;
   }else if(st===2){
     viol=overlaps(pos,c);
@@ -643,21 +653,25 @@ function benchRows(s){const b=bench(s),slots=[...S.data[s].lineup,...(SYS[s].lib
     <select id="bs-${s}-${i}" data-sub="${i}" class="subsel" aria-label="Sub bench ${i+1} in for"><option value="">Sub ⇄</option>${slots.map(id=>{const q=info(s,id);return `<option value="${id}">for ${q.num?'#'+q.num+' ':''}${esc(q.name)}</option>`;}).join('')}</select></div>`).join('');}
 function refreshSubOpts(){document.querySelectorAll('select[data-sub]').forEach(sel=>{[...sel.options].forEach(o=>{if(!o.value)return;const q=info(S.sys,o.value);o.textContent=`for ${q.num?'#'+q.num+' ':''}${q.name}`;});});}
 function numWarn(){const el=document.getElementById('numWarn');if(!el)return;const n=S.data[S.sys].nums||{},seen={},d=[];
-  const ids=[...S.data[S.sys].lineup,...(SYS[S.sys].lib?['L']:[])];const vals=ids.map(id=>n[id]).concat(bench(S.sys).map(b=>b.num));vals.forEach(v=>{if(!v)return;if(seen[v]&&!d.includes(v))d.push(v);seen[v]=1;});
+  const ids=[...S.data[S.sys].lineup,...(SYS[S.sys].shared?['S2']:[]),...(SYS[S.sys].lib?['L']:[])];const vals=ids.map(id=>n[id]).concat(bench(S.sys).map(b=>b.num));vals.forEach(v=>{if(!v)return;if(seen[v]&&!d.includes(v))d.push(v);seen[v]=1;});
   el.textContent=d.length?'Jersey '+d.map(v=>'#'+v).join(', ')+(d.length>1?' are':' is')+' used more than once.':'';}
 function renderPanel(){
   const s=S.sys,def=SYS[s],lu=S.data[s].lineup;
   const rows=lu.map((id,i)=>{const p=info(s,id);
     return `<div class="prow ${p.role}"><select data-zone-for="${id}" id="z-${s}-${id}" aria-label="Starting zone for ${esc(p.def)}">${[1,2,3,4,5,6].map(z=>`<option value="${z}" ${z===i+1?'selected':''}>Zone ${z}</option>`).join('')}</select>
       <div class="pchip">${p.label}</div>${numIn(s,id)}<input type="text" id="n-${s}-${id}" data-name-for="${id}" value="${esc(S.data[s].names[id]||'')}" placeholder="${esc(p.def)}" maxlength="18"></div>`;});
+  const s2=def.shared?(()=>{const q=info(s,'S2'),r=s2Rots();
+    return `<div class="prow S"><span class="shares">Shares the setter spot</span><div class="pchip">S2</div>${numIn(s,'S2')}<input type="text" id="n-${s}-S2" data-name-for="S2" value="${esc(S.data[s].names.S2||'')}" placeholder="Setter 2" maxlength="18"></div>
+      <div class="s2pick"><span class="label">Setter 2 sets in rotations</span><div class="s2rots">${[1,2,3,4,5,6].map(n=>`<button data-s2rot="${n}" aria-pressed="${r.includes(n)}">${n}</button>`).join('')}</div>
+      <p class="blurb">${r.length?`Setter 2 is in for rotation${r.length>1?'s':''} ${r.join(', ')}; Setter 1 sets the others.`:'Setter 1 sets every rotation.'}</p></div>`;})():'';
   const lib=def.lib?`<div class="prow L"><label class="toggle" for="libOn"><input type="checkbox" id="libOn" ${S.libero?'checked':''}>Use</label>
       <div class="pchip">L</div>${numIn(s,'L')}<input type="text" id="n-${s}-L" data-name-for="L" value="${esc(S.data[s].names.L||'')}" placeholder="Libero" maxlength="18"></div>
       <p class="blurb">The libero replaces whichever middle is in the back row.</p>`:'';
   document.getElementById('panel').innerHTML=`<h3>${s} lineup</h3><p class="blurb">${def.blurb}</p>
-    <div class="label">Starting zone · jersey # · name</div><div class="plist">${rows.join('')}${lib}</div><p class="numwarn" id="numWarn"></p>
+    <div class="label">Starting zone · jersey # · name</div><div class="plist">${rows.join('')}${s2}${lib}</div><p class="numwarn" id="numWarn"></p>
     <div class="label">Bench · position · # · name</div><div class="plist">${benchRows(s)}</div><p class="submsg" id="subMsg" aria-live="polite"></p>
     <p class="blurb">Use Sub to swap a bench player with someone on the court. The sub takes over that player's spot in the rotation.</p>
-    <div class="legend"><span class="S"><i></i>Setter</span><span class="OH"><i></i>Outside</span><span class="MB"><i></i>Middle</span>${s==='5-1'?'<span class="OPP"><i></i>Opposite</span>':''}${def.lib?'<span class="L"><i></i>Libero</span>':''}</div>
+    <div class="legend"><span class="S"><i></i>Setter</span><span class="OH"><i></i>Outside</span><span class="MB"><i></i>Middle</span>${s==='5-1'||s==='5-2'?'<span class="OPP"><i></i>Opposite</span>':''}${def.lib?'<span class="L"><i></i>Libero</span>':''}</div>
     <div class="row-actions"><button class="linkbtn" id="resetAll">Reset lineup, numbers and moves</button></div>`;
   numWarn();
 }
@@ -666,6 +680,7 @@ function renderPanel(){
 function stopPlay(){if(playT){clearInterval(playT);playT=null;}}
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.s2rot){const d=S.data[S.sys],n=+b.dataset.s2rot,r=s2Rots().slice(),i=r.indexOf(n);if(i>=0)r.splice(i,1);else r.push(n);d.s2rots=r.sort((x,y)=>x-y);save();renderPanel();render();return;}
   if(b.dataset.sys){stopPlay();S.sys=b.dataset.sys;save();renderPanel();render();}
   else if(b.dataset.mode){stopPlay();S.mode=b.dataset.mode;save();render();}
   else if(b.dataset.rot){stopPlay();S.rot=+b.dataset.rot;save();tick();render();}
@@ -831,7 +846,7 @@ document.getElementById('tReset').addEventListener('click',e=>{const b=e.current
 /* duplicate jersey numbers (starters, libero and bench) */
 function dupNums(){const s=S.sys,d=S.data[s],n=d.nums||{},by={};
   const add=(num,who)=>{if(!num)return;(by[num]=by[num]||[]).push(who);};
-  [...d.lineup,...(SYS[s].lib?['L']:[])].forEach(id=>add(n[id],info(s,id).name));
+  [...d.lineup,...(SYS[s].shared?['S2']:[]),...(SYS[s].lib?['L']:[])].forEach(id=>add(n[id],info(s,id).name));
   bench(s).forEach((b,i)=>add(b.num,b.name||('Bench '+(i+1))));
   return Object.entries(by).filter(([k,v])=>v.length>1).map(([k,v])=>({num:k,who:v}));}
 function dupText(list){return list.map(x=>`#${x.num} is used by ${x.who.join(' and ')}`).join('. ')+'.';}
