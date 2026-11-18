@@ -644,7 +644,7 @@ function renderInfo(c,pos){
 
 /* ---------- panel ---------- */
 function numIn(s,id){const v=(S.data[s].nums||{})[id]||'';return `<input type="text" class="num" inputmode="numeric" pattern="[0-9]*" maxlength="2" id="j-${s}-${id}" data-num-for="${id}" value="${v}" placeholder="#" aria-label="Jersey number">`;}
-function bench(s){const d=S.data[s];if(!Array.isArray(d.bench)||d.bench.length!==6)d.bench=Array.from({length:6},(_,i)=>(d.bench&&d.bench[i])||{name:'',num:'',pos:''});return d.bench;}
+function bench(s){const d=S.data[s];const BENCH=7;if(!Array.isArray(d.bench)||d.bench.length<BENCH)d.bench=Array.from({length:BENCH},(_,i)=>(d.bench&&d.bench[i])||{name:'',num:'',pos:''});return d.bench;}
 const BPOS=['','S','OH','MB','OPP','DS','L'];
 function benchRows(s){const b=bench(s),slots=[...S.data[s].lineup,...(SYS[s].lib?['L']:[])];
   return b.map((p,i)=>`<div class="prow bench"><select id="bp-${s}-${i}" data-bench-pos="${i}" aria-label="Bench ${i+1} position">${BPOS.map(v=>`<option value="${v}" ${p.pos===v?'selected':''}>${v||'Pos'}</option>`).join('')}</select>

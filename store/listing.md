@@ -36,7 +36,7 @@ CATCH OVERLAPS
 Drag any player to try your own formation. Rotation Ready checks rotational order the moment you let go and names the players who would be called for overlap.
 
 BUILD YOUR ROSTER
-Add jersey numbers (1-99), names, a libero and a six-player bench. Use Sub to swap a bench player in, and they take over that spot in the rotation.
+Add jersey numbers (1-99), names, a libero and a seven-player bench. Use Sub to swap a bench player in, and they take over that spot in the rotation.
 
 MAKE IT YOUR TEAM'S
 Add your team name, team colors and logo. Choose a wood floor, a classic court, or a court painted in your team colors.
