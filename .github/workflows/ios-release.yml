@@ -43,6 +43,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/keys"
           printf '%s' "${{ secrets.ASC_PRIVATE_KEY }}" > "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8"
 
+      # Archive unsigned; the export step signs it for App Store distribution.
+      # (Automatic signing at archive time needs a registered device.)
       - name: Archive
         run: |
           xcodebuild archive \
@@ -57,6 +59,9 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
             CODE_SIGN_STYLE=Automatic \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}"
 
       - name: Upload to App Store Connect
