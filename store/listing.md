@@ -12,7 +12,7 @@ Volleyball Rotations & Lineups
 Primary: Sports. Secondary: Education (optional).
 
 **Promotional text** [170]
-See all six rotations before the first serve. Step through serve receive, attack and defense, and catch overlap calls before the referee does.
+See all six rotations before the first serve. Run 5-1, 5-2, 6-2 or 4-2, catch overlaps, track score and subs live, and find your best rotations with match stats.
 
 **Keywords** [100, comma separated, no spaces needed]
 volleyball,rotation,lineup,coach,5-1,6-2,4-2,overlap,serve receive,libero,setter,score,subs
