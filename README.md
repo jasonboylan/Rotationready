@@ -10,6 +10,8 @@ Volleyball rotations and lineups for iPhone and iPad. Works offline, with no acc
 
 Bundle ID: `com.jasonboylan.rotationready`
 
+© 2026 Jason Boylan. All rights reserved. This code is shared for reference only and may not be copied or reused; see [LICENSE](LICENSE).
+
 ---
 
 ## Publishing to the App Store
