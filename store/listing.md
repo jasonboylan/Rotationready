@@ -1,5 +1,7 @@
 # App Store listing: Rotation Ready
 
+**App Store:** https://apps.apple.com/app/id6836876619
+
 Copy these into App Store Connect. The character limit for each field is in brackets.
 
 **Name** [30]

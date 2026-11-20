@@ -1,5 +1,7 @@
 # Rotation Ready
 
+**App Store:** https://apps.apple.com/app/id6836876619
+
 Volleyball rotations and lineups for iPhone and iPad. Works offline, with no accounts and no tracking.
 
 - **The app:** `www/index.html` (one self-contained page)
