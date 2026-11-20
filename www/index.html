@@ -183,6 +183,8 @@ h1{font-family:var(--display);font-weight:700;font-size:1.6rem;letter-spacing:.0
 /* full-screen court */
 .zoombar .fsbtn{padding-inline:16px;font-size:.9rem;color:var(--brand);border-color:var(--brand)}
 .focusbar,.fsexit{display:none}
+.zoombar .resetbtn{color:var(--accent);border-color:var(--accent)}
+.focusbar .freset{padding-inline:14px;font-weight:700;color:var(--accent);border-color:var(--accent)}
 body.focus{overflow:hidden}
 body.focus .board{position:fixed;inset:0;z-index:40;background:var(--bg);margin:0;display:flex;flex-direction:column;justify-content:safe center;align-items:center;gap:8px;overflow-y:auto;
   padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 8px) max(10px,env(safe-area-inset-left,0px))}
@@ -371,7 +373,7 @@ body.focus.matchon .courtscroll{width:min(100%,(100dvh - 312px - env(safe-area-i
         <div class="serve-ball" id="ball" hidden></div>
       </div>
     </div></div>
-    <div class="zoombar"><button id="fsBtn" class="fsbtn" aria-label="Show the court full screen">⤢ Full screen</button><button id="matchBtn" class="fsbtn" aria-label="Start match mode">● Match mode</button><button id="statsBtn" class="fsbtn" aria-label="Open stats">▤ Stats</button></div>
+    <div class="zoombar"><button id="fsBtn" class="fsbtn" aria-label="Show the court full screen">⤢ Full screen</button><button id="matchBtn" class="fsbtn" aria-label="Start match mode">● Match mode</button><button id="statsBtn" class="fsbtn" aria-label="Open stats">▤ Stats</button><button id="resetBtn" class="fsbtn resetbtn" data-resetview hidden aria-label="Reset this view to the default positions">↺ Reset view</button></div>
     <div class="steps" id="steps"></div>
     <div class="info" id="info"></div>
     <div class="focusbar" id="focusBar"></div>
@@ -569,11 +571,13 @@ function render(){
   document.querySelectorAll('[data-rot]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.rot===S.rot));
   document.getElementById('steps').innerHTML=STEPS[S.mode].map((t,i)=>`<button class="step" data-step="${i+1}" aria-pressed="${S.step===i+1}"><b>${i+1}</b><span>${t}</span></button>`).join('')+
     `<button class="play" id="play" aria-label="Play all steps">${playT?'■':'▶'}</button>`;
+  const moved=!!S.ov[vkey(S.step)],rb=document.getElementById('resetBtn');if(rb)rb.hidden=!moved;
   const fb=document.getElementById('focusBar');
   if(fb)fb.innerHTML=focusScore()+`<div class="frow fmode" role="group" aria-label="Receiving or serving"><button data-mode="receive" aria-pressed="${S.mode==='receive'}">Receiving</button><button data-mode="serve" aria-pressed="${S.mode==='serve'}">Serving</button></div>
     <div class="fcap">Rotation ${S.rot} · ${STEPS[S.mode][S.step-1]}</div>
     <div class="frow frot"><span class="flab">Rot</span>${[1,2,3,4,5,6].map(n=>`<button data-rot="${n}" aria-pressed="${S.rot===n}" aria-label="Rotation ${n}">${n}</button>`).join('')}</div>
-    <div class="frow"><span class="flab">Step</span>${[1,2,3,4].map(n=>`<button data-step="${n}" aria-pressed="${S.step===n}" aria-label="Step ${n}: ${STEPS[S.mode][n-1]}">${n}</button>`).join('')}</div>`;
+    <div class="frow"><span class="flab">Step</span>${[1,2,3,4].map(n=>`<button data-step="${n}" aria-pressed="${S.step===n}" aria-label="Step ${n}: ${STEPS[S.mode][n-1]}">${n}</button>`).join('')}</div>`+
+    `<div class="frow"${moved?'':' style="visibility:hidden"'}><button class="freset" data-resetview ${moved?'':'tabindex="-1" aria-hidden="true" '}aria-label="Reset this view to the default positions">↺ Reset view</button></div>`;
   document.getElementById('zoneNums').innerHTML=S.step===1?Object.entries(ZXY).map(([z,[x,y]])=>`<text class="c-zone" x="${x}" y="${y+.55}" font-size="1.6" text-anchor="middle">${z}</text>`).join(''):'';
 
   const pos=getPos(S.step,c);cur=pos;
@@ -640,7 +644,7 @@ function renderInfo(c,pos){
   const has=!!S.ov[vkey(st)];
   document.getElementById('info').innerHTML=`<h2>${title}${chip}</h2><p>${p}</p>`+
     (viol.length?`<ul class="viol">${viol.map(v=>`<li>${v.msg}</li>`).join('')}</ul>`:'')+
-    `<div class="row-actions">${has?'<button class="linkbtn" id="resetView">Reset this step</button>':''}<span class="hint">${has?'You moved players on this step.':'Drag players to adjust. Gold ring = setter.'}</span></div>`;
+    `<div class="row-actions">${has?'<button class="linkbtn" id="resetView" data-resetview>↺ Reset to default</button>':''}<span class="hint">${has?'You moved players on this step.':'Drag players to adjust. Gold ring = setter.'}</span></div>`;
   document.querySelectorAll('.tok').forEach(t=>t.classList.toggle('bad',viol.some(v=>v.ids.includes(t.dataset.id))));
 }
 
@@ -699,7 +703,7 @@ document.addEventListener('click',e=>{
   else if(b.dataset.act==='rotNext'){stopPlay();S.rot=S.rot===6?1:S.rot+1;save();render();}
   else if(b.id==='play'||b.dataset.act==='play'){if(playT){stopPlay();render();return;}S.step=1;render();
     playT=setInterval(()=>{if(S.step>=4){stopPlay();render();return;}S.step++;render();},1500);render();}
-  else if(b.id==='resetView'){delete S.ov[vkey(S.step)];save();render();}
+  else if(b.dataset.resetview!==undefined){stopPlay();delete S.ov[vkey(S.step)];save();render();}
   else if(b.id==='resetAll'){
     if(b.dataset.armed){const s=S.sys;S.data[s]={lineup:SYS[s].players.map(p=>p[0]),names:{}};
       for(const k in S.ov)if(k.startsWith(s+'|'))delete S.ov[k];save();renderPanel();render();}
